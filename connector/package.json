@@ -1,8 +1,8 @@
 {
     "name": "qdrant-connector",
     "version": "0.1.0",
-    "description": "Reference implementation of a Data Connector Agent for Hasura GraphQL Engine",
-    "author": "Hasura (https://github.com/hasura/graphql-engine)",
+    "description": "Qdrant ",
+    "author": "Tristen Harr",
     "license": "Apache-2.0",
     "repository": {
       "type": "git",
@@ -14,7 +14,8 @@
     "homepage": "https://github.com/hasura/graphql-engine#readme",
     "main": "dist/index.js",
     "scripts": {
-      "build": "tsc -build",
+      "build": "tsc -build && npm run remove-tests",
+      "remove-tests": "find ./dist -name '*.test.js' -type f -delete",
       "typecheck": "tsc --noEmit",
       "start": "ts-node ./index.ts",
       "start-no-typecheck": "ts-node --transpileOnly ./src/index.ts",

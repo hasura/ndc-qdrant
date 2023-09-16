@@ -18,3 +18,12 @@ RUN npm install --only=production
 
 # Copy from the 'build' stage
 COPY --from=build /app/dist ./dist
+
+# Set the NODE_ENV to production
+ENV NODE_ENV production
+
+# Expose the port the app runs on
+EXPOSE 8101
+
+# Command to run the application
+CMD ["node", "dist/index.js"]
