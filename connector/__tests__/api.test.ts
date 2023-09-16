@@ -36,8 +36,16 @@ describe('API Tests', () => {
     let points: Point[] = [];
 
     for (let [key, value] of Object.entries(data)) {
-      let ps: object[] = value as object[];
-      let p: object = ps.length === 0 ? null : ps[0];
+      // let ps: object[] = value as object[];
+      // let p: object | null = ps.length === 0 ? null : ps[0];
+      type PossiblePoint = {
+        id?: string | number;
+        vector?: number[] | { [key: string]: number[]; };
+        payload?: Record<string, any> | { [key: string]: any; };
+      };
+      
+      let ps: PossiblePoint[] = value as PossiblePoint[];
+      let p: PossiblePoint | null = ps.length === 0 ? null : ps[0];
       if (p === null || !Array.isArray(p["vector"])) {
         throw new Error("Points must have a vector");
       }

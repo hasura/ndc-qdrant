@@ -8,8 +8,9 @@ export type QdrantConfig = {
     collectionFields: { [collectionName: string]: string[]};
 }
 
+
+// TODO: Pass config
 export const getConfig = (schema: SchemaResponse): QdrantConfig => {
-    // schema.object_types
     let cols: string[] = [];
     let collectionFields: { [collectionName: string]: string[]} = {};
 
@@ -20,11 +21,6 @@ export const getConfig = (schema: SchemaResponse): QdrantConfig => {
     for (let [collectionName, collectionObj] of Object.entries(schema.object_types)) {
         collectionFields[collectionName] = Object.keys(collectionObj.fields);
     }
-
-    console.log(schema);
-    console.log(cols);
-    console.log(collectionFields);
-
     return {
         url: "http://localhost:6333",
         apiKey: null,

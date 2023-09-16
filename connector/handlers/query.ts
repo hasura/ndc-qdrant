@@ -123,7 +123,6 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter): Quer
 
 export async function postQuery(query: QueryRequest, config: QdrantConfig): Promise<QueryResponse> {
     // Assert that the collection is registered in the schema
-    console.log(config.collections);
     if (!config.collections.includes(query.collection)) {
         throw new Error("Collection not found in schema!");
     }

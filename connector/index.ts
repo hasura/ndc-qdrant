@@ -18,7 +18,7 @@ const config = getConfig(schema);
 server.register(FastifyCors, {
     origin: true,
     methods: ["GET", "POST", "OPTIONS"],
-    // Headers are removed from configuration header?
+    // TODO: Accept config headers
 });
 
 server.get<{Reply: CapabilitiesResponse}>(
@@ -57,10 +57,10 @@ server.post<{ Body: QueryRequest, Reply: QueryResponse }>(
     "/query",
     async (request, _response) => {
         server.log.info(
-        //     {
-        //     headers: request.headers,
-        //     query: request.body
-        // },
+            {
+            headers: request.headers,
+            query: request.body
+        },
         "query.request"
         );
         return await postQuery(request.body, config);

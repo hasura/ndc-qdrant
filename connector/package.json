@@ -14,7 +14,7 @@
     "homepage": "https://github.com/hasura/graphql-engine#readme",
     "main": "dist/index.js",
     "scripts": {
-      "build": "tsc",
+      "build": "tsc -build",
       "typecheck": "tsc --noEmit",
       "start": "ts-node ./index.ts",
       "start-no-typecheck": "ts-node --transpileOnly ./src/index.ts",
