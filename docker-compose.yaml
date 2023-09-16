@@ -1,0 +1,20 @@
+version: '0.1'
+
+services:
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+    restart: always
+  reset-data:
+    build: ./data_loader
+    depends_on:
+      - qdrant
+  qdrant-connector:
+    build: ./connector
+    ports:
+      - "8101:8101"
+    restart: always
+    depends_on: 
+      - qdrant
+      - reset-data
