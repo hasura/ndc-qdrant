@@ -69,7 +69,13 @@ describe('API Tests', () => {
   });
 
   afterAll(async () => {
-    // TODO: Teardown
+    let schema = getSchema();
+    let config = getConfig(schema);
+    let client = getQdrantClient(config);
+    let data = await loadDataFromFile(dataFile);
+    for (let key of Object.keys(data)) {
+      await client.deleteCollection(key);
+    }
   });
 
   testDirs.forEach((testDir) => {
