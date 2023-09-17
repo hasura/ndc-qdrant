@@ -10,9 +10,18 @@ interface VarSet {
     [key: string]: any
 }
 
+// Helper function to determine if a value is a float
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
 
-
+/**
+ * Recursively builds a query filter based on the expression and the variable set.
+ * Throws an error for unsupported operation types.
+ * 
+ * @param {Expression} expression - The expression object to be parsed.
+ * @param {QueryFilter} filter - The query filter to be built.
+ * @param {VarSet | null} varSet - The set of variables to be used in the query filter.
+ * @returns {QueryFilter} - The constructed query filter.
+ */
 function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSet: VarSet | null): QueryFilter {
     switch (expression.type) {
         case "unary_comparison_operator":
@@ -150,6 +159,22 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
     return filter;
 }
 
+/**
+ * Queries the database based on various parameters and returns the results as a RowSet.
+ * 
+ * @async
+ * @param {QueryRequest} query - The query request object.
+ * @param {QdrantConfig} config - The Qdrant configuration object.
+ * @param {string} individualCollectionName - The name of the individual collection.
+ * @param {boolean} vectorSearch - A flag indicating whether to perform a vector search.
+ * @param {string[]} includedPayloadFields - The payload fields to include in the response.
+ * @param {boolean} includeVector - A flag indicating whether to include vectors in the response.
+ * @param {boolean} includeId - A flag indicating whether to include IDs in the response.
+ * @param {boolean} includePayload - A flag indicating whether to include payload in the response.
+ * @param {boolean} includeScore - A flag indicating whether to include score in the response.
+ * @param {VarSet | null} varSet - The set of variables to be used in the query.
+ * @returns {Promise<RowSet>} - The results of the query as a RowSet.
+ */
 async function queryDatabase(
     query: QueryRequest,
     config: QdrantConfig,
@@ -269,11 +294,20 @@ async function queryDatabase(
         });
     }
     rowSet.rows = rows;
+
+    // Calculate Aggregates TODO!!!
     rowSet.aggregates = null;
     return rowSet;
 }
 
-
+/**
+ * Processes the query request and returns the query response.
+ * 
+ * @async
+ * @param {QueryRequest} query - The query request object.
+ * @param {QdrantConfig} config - The Qdrant configuration object.
+ * @returns {Promise<QueryResponse>} - The query response.
+ */
 export async function postQuery(query: QueryRequest, config: QdrantConfig): Promise<QueryResponse> {
     // Assert that the collection is registered in the schema
     if (!config.collections.includes(query.collection)) {
@@ -306,6 +340,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     // This is where the response will go.
     let rowSets: RowSet[] = [];
 
+    // TODO: When adding aggregates, we will need to get the fields even if we throw them out afterwards!
     // Collect the payload fields to include in the response. 
     let includedPayloadFields: string[] = [];
     let includeVector: boolean = false;
