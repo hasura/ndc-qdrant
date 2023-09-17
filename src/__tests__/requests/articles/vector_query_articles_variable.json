@@ -1,0 +1,161 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {
+            "vector": {
+                "type": "variable",
+                "name": "$vector_data"
+            }
+        },
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "vector": {
+                    "type": "column",
+                    "column": "vector"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                },
+                "bool": {
+                    "type": "column",
+                    "column": "bool"
+                },
+                "score": {
+                    "type": "column",
+                    "column": "score"
+                }
+            },
+            "limit": 3,
+            "order_by": {
+                "elements": [
+                    {
+                        "target": {
+                            "type": "column",
+                            "name": "score",
+                            "path": []
+                        },
+                        "order_direction": "desc"
+                    },
+                    {
+                        "target": {
+                            "type": "column",
+                            "name": "id",
+                            "path": []
+                        },
+                        "order_direction": "asc"
+                    }
+                ]
+            }
+        },
+        "collection_relationships": {},
+        "variables": [
+            {
+                "$vector_data": [
+                    1,
+                    2,
+                    3,
+                    4
+                ]
+            },
+            {
+                "$vector_data": [
+                    4,
+                    3,
+                    2,
+                    1
+                ]
+            }
+        ]
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 2,
+                    "vector": [
+                        0.29041705,
+                        0.44369268,
+                        0.37915558,
+                        0.75831115
+                    ],
+                    "score": 0.9765005,
+                    "string": "Moscow",
+                    "bool": false
+                },
+                {
+                    "id": 1,
+                    "vector": [
+                        0.04082755,
+                        0.4980961,
+                        0.62057877,
+                        0.60424775
+                    ],
+                    "score": 0.9705181,
+                    "string": "Berlin",
+                    "bool": true
+                },
+                {
+                    "id": 6,
+                    "vector": [
+                        0.04082755,
+                        0.4980961,
+                        0.62057877,
+                        0.60424775
+                    ],
+                    "score": 0.9705181,
+                    "string": "Berlin",
+                    "bool": true
+                }
+            ],
+            "aggregates": null
+        },
+        {
+            "rows": [
+                {
+                    "id": 4,
+                    "vector": [
+                        0.41652608,
+                        0.3123946,
+                        0.38181558,
+                        0.76363117
+                    ],
+                    "score": 0.7541318,
+                    "string": "Beijing",
+                    "bool": false
+                },
+                {
+                    "id": 2,
+                    "vector": [
+                        0.29041705,
+                        0.44369268,
+                        0.37915558,
+                        0.75831115
+                    ],
+                    "score": 0.7320072,
+                    "string": "Moscow",
+                    "bool": false
+                },
+                {
+                    "id": 5,
+                    "vector": [
+                        0.6050693,
+                        0.13830155,
+                        0.19016463,
+                        0.7606585
+                    ],
+                    "score": 0.7259459,
+                    "string": "Mumbai",
+                    "bool": true
+                }
+            ],
+            "aggregates": null
+        }
+    ]
+}

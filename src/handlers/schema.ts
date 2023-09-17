@@ -20,7 +20,14 @@ export function getSchema(): SchemaResponse {
       },
       "String": {
         "aggregate_functions": {},
-        "comparison_operators": {},
+        "comparison_operators": {
+          "like": {
+            "argument_type": {
+              "type": "named",
+              "name": "String"
+            }
+          }
+        },
         "update_operators": {}
       }
       // Geo Type? https://qdrant.tech/documentation/concepts/payload/

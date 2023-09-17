@@ -6,11 +6,14 @@ import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_
 
 type QueryFilter = components["schemas"]["Filter"];
 
+interface VarSet {
+    [key: string]: any
+}
 
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
 
 
-function recursiveBuildFilter(expression: Expression, filter: QueryFilter): QueryFilter {
+function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSet: VarSet | null): QueryFilter {
     switch (expression.type) {
         case "unary_comparison_operator":
             switch (expression.operator) {
@@ -37,13 +40,22 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter): Quer
                 case "column":
                     throw new Error("Binary comparison operator on column Not implemented");
                 case "variable":
-                    throw new Error("Binary comparison operator on variable Not implemented");
+                    if (varSet !== null){
+                        value = varSet[expression.value.name];
+                    }
+                    break;
                 default:
                     throw new Error("Not implemented");
             }
             switch (operator) {
                 case "equal":
-                    if (!isFloat(value)) {
+                    if (expression.column.name === "id") {
+                        filter.must = [
+                            {
+                                "has_id": [value]
+                            }
+                        ];
+                    } else if (!isFloat(value)) {
                         filter.must = [
                             {
                                 key: expression.column.name,
@@ -60,6 +72,20 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter): Quer
                                 }
                             }
                         ]
+                    }
+                    break;
+                case "like":
+                    if (typeof value === "string") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                match: {
+                                    "text": value
+                                }
+                            }
+                        ]
+                    } else {
+                        throw new Error("Not Implemented");
                     }
                     break;
                 default:
@@ -82,36 +108,39 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter): Quer
                 if (expression.column.name === "vector") {
                     throw new Error("Vector in not implemented");
                 }
-                let expression_value_type: string = expression.values[0].type;
-                // TODO: Test with a float?
-                switch (expression_value_type) {
-                    case "scalar":
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                match: { any: expression.values.map(val => val.type === "scalar" ? val.value : undefined) }
-                            }
-                        ];
-                        break;
-                    case "column":
-                        throw new Error("Binary array comparison operator on column Not implemented");
-                    case "variable":
-                        throw new Error("Binary array comparison operator on variable Not implemented");
-                    default:
-                        throw new Error("Not implemented");
+                let matchList: any[] = [];
+                for (let val of expression.values){
+                    switch (val.type){
+                        case "scalar":
+                            matchList.push(val.value);
+                            break;
+                        case "variable":
+                            // Is this not in spec?
+                            throw new Error("Not implemented");
+                        case "column":
+                            throw new Error("Not implemented");
+                        default:
+                            throw new Error("Not implemented");
+                    }
                 }
+                filter.must = [
+                    {
+                        key: expression.column.name,
+                        match: { any: matchList }
+                    }
+                ]
             } else {
                 throw new Error("Binary Array Comparison Operator not implemented!");
             }
             break;
         case "and":
-            filter.must = expression.expressions.map(expr => recursiveBuildFilter(expr, {}));
+            filter.must = expression.expressions.map(expr => recursiveBuildFilter(expr, {}, varSet));
             break;
         case "or":
-            filter.should = expression.expressions.map(expr => recursiveBuildFilter(expr, {}))
+            filter.should = expression.expressions.map(expr => recursiveBuildFilter(expr, {}, varSet))
             break;
         case "not":
-            filter.must_not = [recursiveBuildFilter(expression.expression, {})];
+            filter.must_not = [recursiveBuildFilter(expression.expression, {}, varSet)];
             break;
         case "exists":
             throw new Error("Exists not implemented yet!");
@@ -121,110 +150,46 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter): Quer
     return filter;
 }
 
-export async function postQuery(query: QueryRequest, config: QdrantConfig): Promise<QueryResponse> {
-    // Assert that the collection is registered in the schema
-    if (!config.collections.includes(query.collection)) {
-        throw new Error("Collection not found in schema!");
-    }
-
-    // TODO: VARIABLES NOT IMPLEMENTED
-    if (query.variables !== undefined) {
-        throw new Error("Querying with variables not implemented yet!");
-    }
-
-    // TODO: RELATIONSHIPS NOT IMPLEMENTED
-    if (Object.keys(query.collection_relationships).length !== 0) {
-        throw new Error("Querying with collection relationships not implemented yet!");
-    }
-
-    // TODO: EMPTY FIELDS NOT IMPLEMENTED
-    if (query.query.fields === null || Object.keys(query.query.fields!).length === 0) {
-        throw new Error("Querying with null fields not implemented yet!");
-    }
-
-    // Cannot support both order_by and pagination.
-    if (query.query.order_by !== undefined && ( (query.query.limit !== undefined) || (query.query.offset !== undefined))) {
-        throw new Error("Cannot perform both order_by and pagination");
-    }
-
-    // Implement Return Sorting To Spec! (Does it even make sense to implement sorting?)
-    if (query.query.order_by !== undefined && query.query.order_by !== null) {
-        throw new Error("Sorting not implemented");
-    }
-
-    const individual_collection_name: string = query.collection.slice(0, -1);
-    let vectorSearch: boolean = false;
-    let args = Object.keys(query.arguments);
-    for (let arg of args) {
-        switch (arg) {
-            case "vector":
-                vectorSearch = true;
-                break;
-            default:
-                throw new Error("Argument not implemented");
-        }
-    }
-
-    // OrderBy conflicts with the vector search.
-    if (vectorSearch && query.query.order_by !== undefined && query.query.order_by !== null) {
-        throw new Error("Order by not implemented when performing a vector search");
-    }
-
-    // This is where the response will go.
-    let rowSets: RowSet[] = [];
-
-    // Collect the payload fields to include in the response. 
-    let includedPayloadFields: string[] = [];
-    let includeVector: boolean = false;
-    let includeId: boolean = false;
-    let includePayload: boolean = false;
-    let includeScore: boolean = false;
-
-    // Field Selection -> Collect the fields to be gathered.
-    for (let f of Object.keys(query.query.fields!)) {
-        if (f === "id") {
-            includeId = true;
-        } else if (f === "vector") {
-            includeVector = true;
-        } else if (f === "score") {
-            includeScore = true;
-        } else if (!config.collectionFields[individual_collection_name].includes(f)) {
-            throw new Error("Requested field not in schema!");
-        } else {
-            includedPayloadFields.push(f);
-            includePayload = true;
-        }
-    }
-
-    // Recursively build the query filter. 
+async function queryDatabase(
+    query: QueryRequest,
+    config: QdrantConfig,
+    individualCollectionName: string,
+    vectorSearch: boolean,
+    includedPayloadFields: string[],
+    includeVector: boolean,
+    includeId: boolean,
+    includePayload: boolean,
+    includeScore: boolean,
+    varSet: VarSet | null): Promise<RowSet> {
+    let client = getQdrantClient(config);
+    // Recursively build the query filter.
     let filter: QueryFilter = {};
     if (query.query.where !== undefined) {
-        filter = recursiveBuildFilter(query.query.where!, filter);
+        filter = recursiveBuildFilter(query.query.where!, filter, varSet);
     }
-    let client = getQdrantClient(config);
+
     let res: any = null;
-
     if (vectorSearch) {
-        if (query.arguments.vector.type === "literal") {
-            query.arguments.vector.value as number[];
-            res = await client.search(individual_collection_name, {
-                vector: query.arguments.vector.value as number[],
-                with_vector: includeVector,
-                with_payload: {
-                    include: includedPayloadFields
-                },
-                filter: filter,
-                offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : undefined,
-                limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : undefined
-            });
-
-        } else if (query.arguments.vector.type === "variable") {
-            throw new Error("Variable Not implemented");
+        let v: number[] = [];
+        if (query.arguments.vector.type === "literal"){
+            v = query.arguments.vector.value as number[];
+        } else if (query.arguments.vector.type === "variable" && varSet !== null){
+            v = varSet[query.arguments.vector.name] as number[];
         } else {
-            throw new Error("Variable Not implemented");
+            throw new Error("Not Implemented");
         }
+        res = await client.search(individualCollectionName, {
+            vector: v,
+            with_vector: includeVector,
+            with_payload: {
+                include: includedPayloadFields
+            },
+            filter: filter,
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : undefined,
+            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : undefined
+        });
     } else {
-        res = (await client.scroll(individual_collection_name, {
+        res = (await client.scroll(individualCollectionName, {
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
@@ -259,9 +224,145 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         }
         rows.push(row);
     }
+
+    // Sort the response
+    if (query.query.order_by !== undefined && query.query.order_by !== null) {
+        let elems = query.query.order_by.elements;
+        rows.sort((a, b) => {
+            for (let e of elems) {
+                if (e.target.type === "column") {
+                    const column = e.target.name;
+                    const direction = e.order_direction;
+                    if (typeof a[column] === "number" && typeof b[column] === "number") {
+                        let aVal = a[column] as number;
+                        let bVal = b[column] as number;
+                        if (aVal < bVal) {
+                            return direction === 'asc' ? -1 : 1;
+                        } else if (aVal > bVal) {
+                            return direction === 'asc' ? 1 : -1;
+                        }
+                        continue;
+                    } else if (typeof a[column] === "boolean" && typeof b[column] === "boolean") {
+                        let aVal = a[column] as boolean;
+                        let bVal = b[column] as boolean;
+                        if (aVal < bVal) {
+                            return direction === 'asc' ? -1 : 1;
+                        } else if (aVal > bVal) {
+                            return direction === 'asc' ? 1 : -1;
+                        }
+                    } else if (typeof a[column] === "string" && typeof b[column] === "string") {
+                        let aVal = a[column] as string;
+                        let bVal = b[column] as string;
+                        if (aVal < bVal) {
+                            return direction === 'asc' ? -1 : 1;
+                        } else if (aVal > bVal) {
+                            return direction === 'asc' ? 1 : -1;
+                        }
+                    } else {
+                        throw new Error("Not Implemented");
+                    }
+                } else {
+                    throw new Error("Not implemented");
+                }
+            }
+            return 0; // Return 0 if all values are equal
+        });
+    }
     rowSet.rows = rows;
     rowSet.aggregates = null;
-    rowSets.push(rowSet);
+    return rowSet;
+}
 
+
+export async function postQuery(query: QueryRequest, config: QdrantConfig): Promise<QueryResponse> {
+    // Assert that the collection is registered in the schema
+    if (!config.collections.includes(query.collection)) {
+        throw new Error("Collection not found in schema!");
+    }
+
+    // TODO: RELATIONSHIPS NOT IMPLEMENTED
+    if (Object.keys(query.collection_relationships).length !== 0) {
+        throw new Error("Querying with collection relationships not implemented yet!");
+    }
+
+    // TODO: EMPTY FIELDS NOT IMPLEMENTED
+    if (query.query.fields === null || Object.keys(query.query.fields!).length === 0) {
+        throw new Error("Querying with null fields not implemented yet!");
+    }
+
+    const individualCollectionName: string = query.collection.slice(0, -1);
+    let vectorSearch: boolean = false;
+    let args = Object.keys(query.arguments);
+    for (let arg of args) {
+        switch (arg) {
+            case "vector":
+                vectorSearch = true;
+                break;
+            default:
+                throw new Error("Argument not implemented");
+        }
+    }
+
+    // This is where the response will go.
+    let rowSets: RowSet[] = [];
+
+    // Collect the payload fields to include in the response. 
+    let includedPayloadFields: string[] = [];
+    let includeVector: boolean = false;
+    let includeId: boolean = false;
+    let includePayload: boolean = false;
+    let includeScore: boolean = false;
+    // Field Selection -> Collect the fields to be gathered.
+    for (let f of Object.keys(query.query.fields!)) {
+        if (f === "id") {
+            includeId = true;
+        } else if (f === "vector") {
+            includeVector = true;
+        } else if (f === "score") {
+            includeScore = true;
+        } else if (!config.collectionFields[individualCollectionName].includes(f)) {
+            throw new Error("Requested field not in schema!");
+        } else {
+            includedPayloadFields.push(f);
+            includePayload = true;
+        }
+    }
+
+    if (query.variables === undefined || query.variables === null){
+        let res = await queryDatabase(
+            query,
+            config,
+            individualCollectionName,
+            vectorSearch,
+            includedPayloadFields,
+            includeVector,
+            includeId,
+            includePayload,
+            includeScore,
+            null
+        );
+        rowSets.push(res);
+    } else {
+        // Call these asynchronously
+        let promises = query.variables.map(varSet => {
+            let vSet: VarSet = varSet;
+            return queryDatabase(
+                query,
+                config,
+                individualCollectionName,
+                vectorSearch,
+                includedPayloadFields,
+                includeVector,
+                includeId,
+                includePayload,
+                includeScore,
+                vSet
+            );
+        });
+        let results = await Promise.all(promises);
+        for (let result of results){
+            rowSets.push(result);
+        }
+    }
     return rowSets;
 }

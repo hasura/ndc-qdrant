@@ -5,6 +5,18 @@ import { getConfig } from '../config';
 import { getQdrantClient } from '../qdrant';
 import { getSchema } from '../handlers/schema';
 
+type Point = {
+  id: string | number;
+  vector: number[] | { [key: string]: number[]; };
+  payload?: Record<string, any> | { [key: string]: any; };
+};
+
+type PossiblePoint = {
+  id?: string | number;
+  vector?: number[] | { [key: string]: number[]; };
+  payload?: Record<string, any> | { [key: string]: any; };
+};
+
 describe('API Tests', () => {
   const baseDir = path.resolve(__dirname, './requests');
   const dataFile = path.resolve(__dirname, "./data/data.json");
@@ -18,57 +30,33 @@ describe('API Tests', () => {
     return JSON.parse(data);
   }
 
-  // Step 2: Stub out a function to setup the database
   async function setupDatabase() {
     let schema = getSchema();
     let config = getConfig(schema);
     let client = getQdrantClient(config);
     let data = await loadDataFromFile(dataFile);
-
-    // Define a type that describes the expected structure of your points
-    type Point = {
-      id: string | number;
-      vector: number[] | { [key: string]: number[]; };
-      payload?: Record<string, any> | { [key: string]: any; };
-    };
-
-    // Then use this type for the points array
     let points: Point[] = [];
-
     for (let [key, value] of Object.entries(data)) {
-      // let ps: object[] = value as object[];
-      // let p: object | null = ps.length === 0 ? null : ps[0];
-      type PossiblePoint = {
-        id?: string | number;
-        vector?: number[] | { [key: string]: number[]; };
-        payload?: Record<string, any> | { [key: string]: any; };
-      };
-      
       let ps: PossiblePoint[] = value as PossiblePoint[];
       let p: PossiblePoint | null = ps.length === 0 ? null : ps[0];
       if (p === null || !Array.isArray(p["vector"])) {
         throw new Error("Points must have a vector");
       }
       let collectionLen = p["vector"].length;
-
       await client.recreateCollection(key, {
         vectors: {
           size: collectionLen,
           distance: "Cosine"
         }
       });
-      // Reset the points array for each collection
       points = [];
-
       for (let point of ps) {
-        // Make sure point has the necessary properties before pushing it to the points array
         if ('id' in point && 'vector' in point) {
           points.push(point as Point);
         } else {
           throw new Error("Point object is missing required properties");
         }
       }
-
       await client.upsert(key, {
         wait: true,
         points: points
@@ -78,6 +66,10 @@ describe('API Tests', () => {
 
   beforeAll(async () => {
     await setupDatabase();
+  });
+
+  afterAll(async () => {
+    // TODO: Teardown
   });
 
   testDirs.forEach((testDir) => {

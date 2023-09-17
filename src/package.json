@@ -3,15 +3,15 @@
     "version": "0.1.0",
     "description": "Qdrant ",
     "author": "Tristen Harr",
-    "license": "Apache-2.0",
+    "license": "TODO: determine license",
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/hasura/graphql-engine.git"
+      "url": "git+https://github.com/hasura/ndc-qdrant.git"
     },
     "bugs": {
-      "url": "https://github.com/hasura/graphql-engine/issues"
+      "url": "https://github.com/hasura/ndc-qdrant/issues"
     },
-    "homepage": "https://github.com/hasura/graphql-engine#readme",
+    "homepage": "https://github.com/hasura/ndc-qdrant#readme",
     "main": "dist/index.js",
     "scripts": {
       "build": "tsc -build && npm run remove-tests",
