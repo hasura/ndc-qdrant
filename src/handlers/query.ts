@@ -10,6 +10,7 @@ interface VarSet {
     [key: string]: any
 }
 
+
 // Helper function to determine if a value is a float
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
 
@@ -193,6 +194,26 @@ async function queryDatabase(
         filter = recursiveBuildFilter(query.query.where!, filter, varSet);
     }
 
+    let aggKeys: string[] = [];
+    if (Array.isArray(query.query.aggregates)){
+        for (let [_, agg] of Object.entries(query.query.aggregates)){
+            if (agg.type !== "star_count"){
+                aggKeys.push(agg.column);
+            }
+        }
+    }
+
+    // In order to properly calculate aggregation, we need to ensure we get all aggregate fields to calculate the aggregates, even if we drop some.
+    let aggRemoveRows: string[] = [];
+    for (let row of aggKeys){
+        if (!includedPayloadFields.includes(row)){
+            includedPayloadFields.push(row);
+            aggRemoveRows.push(row);
+        }
+    }
+
+
+
     let res: any = null;
     if (vectorSearch) {
         let v: number[] = [];
@@ -225,17 +246,22 @@ async function queryDatabase(
         })).points;
     }
 
+
+    // Prep for aggregates
+    let agg_res: {[key: string]: any} = {};
+    let agg_vars: {[key: string]: any[]} = {};
+
     let rowSet: RowSet = {};
     let rows: Row[] = [];
     for (let p of res) {
         let row: Row = {};
-        if (includeId) {
+        if (includeId || includedPayloadFields.includes("id")) {
             row.id = p.id;
         }
-        if (includeVector) {
+        if (includeVector || includedPayloadFields.includes("vector")) {
             row.vector = p.vector!;
         }
-        if (includeScore) {
+        if (includeScore || includedPayloadFields.includes("score")) {
             row.score = p.score !== undefined ? p.score : null;
         }
         if (includePayload) {
@@ -247,10 +273,81 @@ async function queryDatabase(
                 }
             }
         }
+
+        // Calculate aggregate
+        if (query.query.aggregates !== undefined && query.query.aggregates !== null){
+            for (let [key, agg] of Object.entries(query.query.aggregates)){
+                switch (agg.type){
+                    case "single_column":
+                        switch (agg.function){
+                            case "sum":
+                                if (typeof row[agg.column] === "number"){
+                                    if (agg_res[key] === undefined){
+                                        agg_res[key] = 0;
+                                    }
+                                    agg_res[key] += row[agg.column];
+                                    break;
+                                } else if (typeof row[agg.column] === "string"){ // I added a string aggregate, it might be useful but the sort order isn't maintained on string agg.
+                                    if (agg_res[key] === undefined){
+                                        agg_res[key] = "";
+                                    }
+                                    agg_res[key] += row[agg.column];
+                                    break;
+                                } else {
+                                    throw new Error("Not implemented");
+                                }
+                            case "avg":
+                                if (typeof row[agg.column] === "number"){
+                                    if (agg_res[key] === undefined){
+                                        agg_res[key] = 0;
+                                    }
+                                    agg_res[key] += (row[agg.column] as number / res.length) as number;
+                                    break;
+                                } else {
+                                    throw new Error("Not implemented");
+                                }
+                            default:
+                                throw new Error("Not implemented");
+                        }
+                        break;
+                    case "column_count":
+                        if (agg_vars[key] === undefined){
+                            agg_vars[key] = [];
+                        }
+                        if (agg_res[key] === undefined){
+                            agg_res[key] = 0;
+                        }
+                        if (row[agg.column] !== null && row[agg.column] !== undefined){
+                            if (agg.distinct){
+                                if (Array.isArray(agg_vars[key]) && !agg_vars[key].includes(row[agg.column])){
+                                    agg_vars[key].push(row[agg.column]);
+                                    agg_res[key] += 1;
+                                }
+                            } else {
+                                agg_res[key] += 1;
+                            }
+                        }
+                        break;
+                    case "star_count":
+                        if (agg_res[key] === undefined){
+                            agg_res[key] = 0;
+                        }
+                        agg_res[key] += 1;
+                        break;
+                    default:
+                        throw new Error("Not implemented");
+                }
+            }
+        }
+        // Remove the rows needed to calculate the aggregate but not returned in the field.
+        for (let undef of aggRemoveRows){
+            row[undef] = undefined;
+        }
         rows.push(row);
     }
 
     // Sort the response
+    // TODO: It might make sense to turn this into an insertion sort and integrate it with above loop.
     if (query.query.order_by !== undefined && query.query.order_by !== null) {
         let elems = query.query.order_by.elements;
         rows.sort((a, b) => {
@@ -266,7 +363,6 @@ async function queryDatabase(
                         } else if (aVal > bVal) {
                             return direction === 'asc' ? 1 : -1;
                         }
-                        continue;
                     } else if (typeof a[column] === "boolean" && typeof b[column] === "boolean") {
                         let aVal = a[column] as boolean;
                         let bVal = b[column] as boolean;
@@ -293,10 +389,13 @@ async function queryDatabase(
             return 0; // Return 0 if all values are equal
         });
     }
-    rowSet.rows = rows;
 
-    // Calculate Aggregates TODO!!!
-    rowSet.aggregates = null;
+    rowSet.rows = rows;
+    if (Object.keys(agg_res).length > 0){
+        rowSet.aggregates = agg_res;
+    } else {
+        rowSet.aggregates = null;
+    }
     return rowSet;
 }
 
