@@ -1,5 +1,6 @@
 from qdrant_client import QdrantClient
 import json
+import argparse
 
 def recursive_type(val):
     def wrap_null(x):
@@ -51,8 +52,11 @@ def insertion(payload_dict):
         }
     return response_dict
 
-def main():
-    client = QdrantClient("localhost", port=6333)
+def main(qdrant_url="localhost", qdrant_port=6333, qdrant_api_key=None, out_file="type_stubs.json"):
+    client = QdrantClient(qdrant_url, 
+                          port=qdrant_port,
+                          api_key=qdrant_api_key
+                          )
     base_fields = {
         "id": {
             "description": None,
@@ -137,7 +141,7 @@ def main():
                 "foreign_keys": {}
             }
         ])
-    with open("type_stubs.json", "w") as f:
+    with open(out_file, "w") as f:
         f.write(json.dumps(
             {
                 "object_types": object_types,
@@ -146,4 +150,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Qdrant schema downloader')
+    parser.add_argument('--qdrant_url', type=str, default="localhost", help='Qdrant server URL.')
+    parser.add_argument('--qdrant_port', type=int, default=6333, help='Qdrant server port.')
+    parser.add_argument('--qdrant_api_key', type=str, default=None, help='Qdrant API key.')
+    parser.add_argument('--out_file', type=str, default="type_stubs.json", help='Path to output the file to.')
+    args = parser.parse_args()
+    main(qdrant_url=args.qdrant_url,
+         qdrant_port=args.qdrant_port,
+         qdrant_api_key=args.qdrant_api_key,
+         out_file=args.out_file)
