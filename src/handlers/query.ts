@@ -10,7 +10,6 @@ interface VarSet {
     [key: string]: any
 }
 
-
 // Helper function to determine if a value is a float
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
 
@@ -345,51 +344,6 @@ async function queryDatabase(
         }
         rows.push(row);
     }
-
-    // Sort the response
-    // TODO: It might make sense to turn this into an insertion sort and integrate it with above loop.
-    if (query.query.order_by !== undefined && query.query.order_by !== null) {
-        let elems = query.query.order_by.elements;
-        rows.sort((a, b) => {
-            for (let e of elems) {
-                if (e.target.type === "column") {
-                    const column = e.target.name;
-                    const direction = e.order_direction;
-                    if (typeof a[column] === "number" && typeof b[column] === "number") {
-                        let aVal = a[column] as number;
-                        let bVal = b[column] as number;
-                        if (aVal < bVal) {
-                            return direction === 'asc' ? -1 : 1;
-                        } else if (aVal > bVal) {
-                            return direction === 'asc' ? 1 : -1;
-                        }
-                    } else if (typeof a[column] === "boolean" && typeof b[column] === "boolean") {
-                        let aVal = a[column] as boolean;
-                        let bVal = b[column] as boolean;
-                        if (aVal < bVal) {
-                            return direction === 'asc' ? -1 : 1;
-                        } else if (aVal > bVal) {
-                            return direction === 'asc' ? 1 : -1;
-                        }
-                    } else if (typeof a[column] === "string" && typeof b[column] === "string") {
-                        let aVal = a[column] as string;
-                        let bVal = b[column] as string;
-                        if (aVal < bVal) {
-                            return direction === 'asc' ? -1 : 1;
-                        } else if (aVal > bVal) {
-                            return direction === 'asc' ? 1 : -1;
-                        }
-                    } else {
-                        throw new Error("Not Implemented");
-                    }
-                } else {
-                    throw new Error("Not implemented");
-                }
-            }
-            return 0; // Return 0 if all values are equal
-        });
-    }
-
     rowSet.rows = rows;
     if (Object.keys(agg_res).length > 0){
         rowSet.aggregates = agg_res;
@@ -413,7 +367,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         throw new Error("Collection not found in schema!");
     }
 
-    // TODO: RELATIONSHIPS NOT IMPLEMENTED
+    // Currently not planning to implement relationships - Does not make sense for DB target
     if (Object.keys(query.collection_relationships).length !== 0) {
         throw new Error("Querying with collection relationships not implemented yet!");
     }
@@ -421,6 +375,10 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     // TODO: EMPTY FIELDS NOT IMPLEMENTED
     if (query.query.fields === null || Object.keys(query.query.fields!).length === 0) {
         throw new Error("Querying with null fields not implemented yet!");
+    }
+
+    if (query.query.order_by !== undefined && query.query.order_by !== null){
+        throw new Error("Order by not implemented");
     }
 
     const individualCollectionName: string = query.collection.slice(0, -1);
@@ -439,14 +397,13 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     // This is where the response will go.
     let rowSets: RowSet[] = [];
 
-    // TODO: When adding aggregates, we will need to get the fields even if we throw them out afterwards!
+    // When adding aggregates, we will need to get the fields even if we throw them out afterwards!
     // Collect the payload fields to include in the response. 
     let includedPayloadFields: string[] = [];
     let includeVector: boolean = false;
     let includeId: boolean = false;
     let includePayload: boolean = false;
     let includeScore: boolean = false;
-    // Field Selection -> Collect the fields to be gathered.
     for (let f of Object.keys(query.query.fields!)) {
         if (f === "id") {
             includeId = true;

@@ -32,27 +32,7 @@
                     "column": "score"
                 }
             },
-            "limit": 3,
-            "order_by": {
-                "elements": [
-                    {
-                        "target": {
-                            "type": "column",
-                            "name": "score",
-                            "path": []
-                        },
-                        "order_direction": "desc"
-                    },
-                    {
-                        "target": {
-                            "type": "column",
-                            "name": "id",
-                            "path": []
-                        },
-                        "order_direction": "asc"
-                    }
-                ]
-            }
+            "limit": 1
         },
         "collection_relationships": {},
         "variables": [
@@ -88,30 +68,6 @@
                     "score": 0.9765005,
                     "string": "Moscow",
                     "bool": false
-                },
-                {
-                    "id": 1,
-                    "vector": [
-                        0.04082755,
-                        0.4980961,
-                        0.62057877,
-                        0.60424775
-                    ],
-                    "score": 0.9705181,
-                    "string": "Berlin",
-                    "bool": true
-                },
-                {
-                    "id": 6,
-                    "vector": [
-                        0.04082755,
-                        0.4980961,
-                        0.62057877,
-                        0.60424775
-                    ],
-                    "score": 0.9705181,
-                    "string": "Berlin",
-                    "bool": true
                 }
             ],
             "aggregates": null
@@ -129,30 +85,6 @@
                     "score": 0.7541318,
                     "string": "Beijing",
                     "bool": false
-                },
-                {
-                    "id": 2,
-                    "vector": [
-                        0.29041705,
-                        0.44369268,
-                        0.37915558,
-                        0.75831115
-                    ],
-                    "score": 0.7320072,
-                    "string": "Moscow",
-                    "bool": false
-                },
-                {
-                    "id": 5,
-                    "vector": [
-                        0.6050693,
-                        0.13830155,
-                        0.19016463,
-                        0.7606585
-                    ],
-                    "score": 0.7259459,
-                    "string": "Mumbai",
-                    "bool": true
                 }
             ],
             "aggregates": null
