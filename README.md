@@ -88,8 +88,11 @@ To replace the schema or change the schema to reflect an existing database struc
 This script accepts the following command line arguments:
 
 --qdrant_url = The url for the qdrant instance, DEFAULT: localhost
+
 --qdrant_port = The port, DEFAULT: 6333
+
 --qdrant_api_key = The API key if using Qdrant cloud, DEFAULT: None
+
 --out_file = The file to output the generated schema types to. DEFAULT: type_stubs.json
 
 Usage:
@@ -115,8 +118,11 @@ A nifty python helper script exists that will upload data to the qdrant database
 This script accepts the following command line arguments:
 
 --file = The file to load the data from.
+
 --qdrant_url = The url for the qdrant instance, DEFAULT: localhost
+
 --qdrant_port = The port, DEFAULT: 6333
+
 --qdrant_api_key = The API key if using Qdrant cloud, DEFAULT: None
 
 Usage:
