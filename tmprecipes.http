@@ -12,16 +12,11 @@ qdrant_url: http://localhost:6333
                 "type": "column",
                 "column": "id"
             },
-            "vector": {
-                "type": "column",
-                "column": "vector"
-            },
             "name": {
                 "type": "column",
                 "column": "name"
             }
-        },
-        "limit": 10
+        }
     },
     "collection_relationships": {}
 }

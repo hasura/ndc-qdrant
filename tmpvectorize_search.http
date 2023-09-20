@@ -7,7 +7,7 @@ schema: {"object_types": {"article": {"description": null, "fields": {"arr": {"d
     "arguments": {
         "search": {
             "type": "literal",
-            "value": "It will take 45 minutes to make this recipe.\nThis recipe is named: alouette  potatoes\nThe ingredients for this recipe are: spreadable cheese with garlic and herbs, new potatoes, shallots, parsley, tarragon, olive oil, red wine vinegar, salt, pepper, red bell pepper, yellow bell pepper\n"
+            "value": "I the best taco recipe."
         },
         "searchModel": {
             "type": "literal",
@@ -32,19 +32,12 @@ schema: {"object_types": {"article": {"description": null, "fields": {"arr": {"d
                 "type": "column",
                 "column": "name"
             },
-            "ingredients": {
+            "minutes": {
                 "type": "column",
-                "column": "ingredients"
-            },
-            "steps": {
-                "type": "column",
-                "column": "steps"
-            },
-            "vector_text": {
-                "type": "column",
-                "column": "vector_text"
+                "column": "minutes"
             }
-        }
+        },
+        "limit": 5
     },
     "collection_relationships": {}
 }

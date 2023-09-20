@@ -1,5 +1,3 @@
-# TODO: For some reason the vector search isn't providing good matches. Even when searching for an embed of an exact match, the results are off, needs to be figured out.
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
@@ -14,7 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True
 )
-# Models are heavy to load, so we will create a cache dict holding the loaded models.
+# Models are heavy to load, so we will create a simple cache dict holding the loaded models. This isn't suitable for production.
 models = {}
 
 class TextTransformRequest(BaseModel):
@@ -38,6 +36,6 @@ async def text_transform(request_body: TextTransformRequest) -> List[float]:
         transformer = models[request_body.model]
     try:
         res = transformer.encode(request_body.search)
-        return res
+        return res.tolist()
     except Exception as _:
         raise HTTPException(400, "Encoding failed")

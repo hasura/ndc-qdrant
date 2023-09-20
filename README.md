@@ -183,9 +183,63 @@ This script accepts the following command line arguments:
 Usage:
 
 ```shell
-python3 import_data.py --file=data.json --qdrant_url=localhost --qdrant_port=6333
+python3 import_data.py --file=datasets/test.json --qdrant_url=localhost --qdrant_port=6333
 ```
 
 
 Provided in the database_introspect directory, you'll find a file called "recipes.json" which has been created by encoding the first 1000 data-points in the dataset located at: https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions into the vector database.
 
+Inside the vectorize_api directory is a simple API that uses open-source sentence transformers to perform embeddings. This is started with the Docker compose file.
+
+All collections are parameterized with the capability to make an external API call to retrive the embeddings for a piece of text.
+
+An example POST request body to perform a vector search embedding the text on the fly would look like this:
+
+```json
+{
+    "collection": "recipes",
+    "arguments": {
+        "search": {
+            "type": "literal",
+            "value": "I want a taco recipe."
+        },
+        "searchModel": {
+            "type": "literal",
+            "value": "all-MiniLM-L6-v2"
+        },
+        "searchUrl": {
+            "type": "literal",
+            "value": "http://localhost:8102/text_transform/"
+        }
+    },
+    "query": {
+        "fields": {
+            "id": {
+                "type": "column",
+                "column": "id"
+            },
+            "score": {
+                "type": "column",
+                "column": "score"
+            },
+            "name": {
+                "type": "column",
+                "column": "name"
+            },
+            "minutes": {
+                "type": "column",
+                "column": "minutes"
+            }
+        },
+        "limit": 5
+    },
+    "collection_relationships": {}
+}
+```
+
+Here, we pass 3 arguments to the collection. If any one of these arguments is passed, all three MUST be passed. If these are passed along with the vector argument, the vector will be overwritten.
+
+(The first time you load a searchModel will take some time, but models are cached so subsequent calls are much faster!)
+
+Provided in the datasets directory is 1000 recipes pre-embedded using the "all-MiniLM-L6-v2" sentence transformer.
+These can be uploaded by using the import_data.py script, and subsequently queried via text to vector search.

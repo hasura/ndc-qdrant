@@ -18,13 +18,16 @@ def main(file: str = "data.json",
             vectors_config=VectorParams(size=len(v[0]["vector"]), distance=Distance.COSINE)
         )
         point_structs = []
-        for p in v:
+        for i, p in enumerate(v):
             point_structs.append(PointStruct(**p))
-        client.upsert(
-            collection_name=k,
-            wait=True,
-            points=point_structs
-        )
+            if len(point_structs) == 32 or i == len(v) - 1:
+                client.upsert(
+                    collection_name=k,
+                    wait=True,
+                    points=point_structs
+                )
+                point_structs = []
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A script to interact with Qdrant.')
