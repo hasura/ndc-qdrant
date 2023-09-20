@@ -71,6 +71,7 @@ of the collections in Qdrant.
 }
 ```
 
+
 The collections that will be created are:
 1. article
 2. boolean
@@ -119,7 +120,9 @@ Each test is represented as a JSON file. Here's an example of a simple test.
             ]
         }
     ]
-}```
+}
+```
+
 
 The request will be sent as the body of the request.
 The expected response must match the actual response or the test will fail!
