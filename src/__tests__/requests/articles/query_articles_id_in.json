@@ -9,18 +9,6 @@
                 "id": {
                     "type": "column",
                     "column": "id"
-                },
-                "vector": {
-                    "type": "column",
-                    "column": "vector"
-                },
-                "string": {
-                    "type": "column",
-                    "column": "string"
-                },
-                "bool": {
-                    "type": "column",
-                    "column": "bool"
                 }
             },
             "where": {
@@ -35,10 +23,6 @@
                     {
                         "type": "scalar",
                         "value": 1
-                    },
-                    {
-                        "type": "scalar",
-                        "value": 4
                     }
                 ]
             }
@@ -50,26 +34,7 @@
             "aggregates": null,
             "rows": [
                 {
-                    "id": 1,
-                    "vector": [
-                        0.04082755,
-                        0.4980961,
-                        0.62057877,
-                        0.60424775
-                    ],
-                    "string": "Berlin",
-                    "bool": true
-                },
-                {
-                    "id": 4,
-                    "vector": [
-                        0.41652608,
-                        0.3123946,
-                        0.38181558,
-                        0.76363117
-                    ],
-                    "string": "Beijing",
-                    "bool": false
+                    "id": 1
                 }
             ]
         }

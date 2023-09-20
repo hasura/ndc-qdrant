@@ -6,3 +6,13 @@ services:
     ports:
       - "6333:6333"
     restart: always
+
+  fastapi-app:
+    build:
+      context: ./vectorize_api
+      dockerfile: Dockerfile
+    ports:
+      - "8102:8102"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: always

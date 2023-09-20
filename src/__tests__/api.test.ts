@@ -1,9 +1,8 @@
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getConfig } from '../config';
 import { getQdrantClient } from '../qdrant';
-import { getSchema } from '../handlers/schema';
+import { TEST_OBJECT_TYPES, TEST_COLLECTIONS, TEST_CONFIG } from '../constants';
 
 type Point = {
   id: string | number;
@@ -15,6 +14,11 @@ type PossiblePoint = {
   id?: string | number;
   vector?: number[] | { [key: string]: number[]; };
   payload?: Record<string, any> | { [key: string]: any; };
+};
+
+const testHeaders = {
+  'schema': JSON.stringify({object_types: TEST_OBJECT_TYPES, collections: TEST_COLLECTIONS}),
+  'qdrant_url': "http://localhost:6333"
 };
 
 describe('API Tests', () => {
@@ -31,9 +35,7 @@ describe('API Tests', () => {
   }
 
   async function setupDatabase() {
-    let schema = getSchema();
-    let config = getConfig(schema);
-    let client = getQdrantClient(config);
+    let client = getQdrantClient(TEST_CONFIG);
     let data = await loadDataFromFile(dataFile);
     let points: Point[] = [];
     for (let [key, value] of Object.entries(data)) {
@@ -69,9 +71,7 @@ describe('API Tests', () => {
   });
 
   afterAll(async () => {
-    let schema = getSchema();
-    let config = getConfig(schema);
-    let client = getQdrantClient(config);
+    let client = getQdrantClient(TEST_CONFIG);
     let data = await loadDataFromFile(dataFile);
     for (let key of Object.keys(data)) {
       await client.deleteCollection(key);
@@ -89,9 +89,14 @@ describe('API Tests', () => {
       });
 
       test.each(testCases)('Testing %s', async ({ filePath, method, url, request, response }) => {
-        const apiResponse = await axios({ method, url: `http://127.0.0.1:8101/${url}`, data: request });
+        const apiResponse = await axios({
+          method,
+          url: `http://127.0.0.1:8101/${url}`,
+          data: request,
+          headers: testHeaders
+        });
         expect(apiResponse.data).toEqual(response);
-    });
+      });
     });
   });
 });

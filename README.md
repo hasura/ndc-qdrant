@@ -27,7 +27,8 @@ Tests:       25 passed, 25 total
 
 Tests will create collections from data.json found in the \__tests__ directory.
 
-Tests are encoded as JSON objects:
+The test data is encoded as JSON and will be uploaded to Qdrant. The root-level field of the tests (e.g. "article" and "boolean") will become the name
+of the collections in Qdrant.
 
 ```json
 {
@@ -70,20 +71,62 @@ Tests are encoded as JSON objects:
 }
 ```
 
-During test setup, each key in the JSON file will be turned into a collection, and each 
-
 The collections that will be created are:
 1. article
 2. boolean
 
-Each test is represented as a JSON file.
+Each test is represented as a JSON file. Here's an example of a simple test.
 
+```json
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                }
+            },
+            "where": {
+                "type": "binary_array_comparison_operator",
+                "column": {
+                    "type": "column",
+                    "name": "id",
+                    "path": []
+                },
+                "operator": "in",
+                "values": [
+                    {
+                        "type": "scalar",
+                        "value": 1
+                    }
+                ]
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "aggregates": null,
+            "rows": [
+                {
+                    "id": 1
+                }
+            ]
+        }
+    ]
+}```
+
+The request will be sent as the body of the request.
+The expected response must match the actual response or the test will fail!
 
 ### Replacing the schema
 
-The schema is currently hardcoded into the connector. This will be replaced with a configuration once V3 goes live.
-
-To replace the schema or change the schema to reflect an existing database structure you can run the download_schema.py file in the database_introspect directory.
+To download the latest schema for an existing database structure you can run the download_schema.py file in the database_introspect directory, and then pass that value as the 'schema' header to the API.
 
 This script accepts the following command line arguments:
 
@@ -98,18 +141,27 @@ This script accepts the following command line arguments:
 Usage:
 
 ```shell
-python3 download_schema.py --qdrant_url=localhost --qdrant_port=6333
+python3 download_schema.py --qdrant_url=localhost --qdrant_port=6333 --out_file=type_stubs.json
 ```
 
-This will generate a JSON file containing the data required in the schema.
-
-With a blank database that will look like this:
+With a blank database that will write the following to "type_stubs.json"
 
 ```json
 {"object_types": {}, "collections": []}
 ```
 
-In the schema.ts file located at src/handlers/schema.ts you can replace the object_types & collections with the generated schema. (Once V3 is live/accessible this schema data will be passed through the connector configuration rather than hardcoded.)
+When sending a request to the connector, you may specify the object_types and the collections.
+
+
+Here's an example of how to send the schema to a connector that has no collections:
+
+
+```http
+GET http://localhost:8101/schema
+Content-Type: application/json
+schema: {"object_types": {}, "collections": []}
+```
+
 
 ### Uploading test data and generating a schema
 
@@ -130,3 +182,7 @@ Usage:
 ```shell
 python3 import_data.py --file=data.json --qdrant_url=localhost --qdrant_port=6333
 ```
+
+
+Provided in the database_introspect directory, you'll find a file called "recipes.json" which has been created by encoding the first 1000 data-points in the dataset located at: https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions into the vector database.
+

@@ -1,0 +1,7 @@
+POST http://localhost:8102/text_transform/
+Content-Type: application/json
+
+{
+    "model": "BAAI/bge-large-zh-v1.5",
+    "search": "Hello"
+}

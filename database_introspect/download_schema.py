@@ -127,7 +127,34 @@ def main(qdrant_url="localhost", qdrant_port=6333, qdrant_api_key=None, out_file
                                 }
                             }
                         }
-                    }
+                    },
+                    "search": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "searchModel": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "searchUrl": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
                 },
                 "type": cn,
                 "deletable": False,

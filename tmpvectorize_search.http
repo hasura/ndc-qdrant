@@ -1,0 +1,50 @@
+POST http://localhost:8101/query
+Content-Type: application/json
+schema: {"object_types": {"article": {"description": null, "fields": {"arr": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}}}, "bool": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Bool"}}}, "float": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}, "int": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "string": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "id": {"description": null, "arguments": {}, "type": {"type": "named", "name": "Int"}}, "score": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}, "vector": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}}, "boolean": {"description": null, "fields": {"A": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Bool"}}}, "B": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Bool"}}}, "C": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Bool"}}}, "D": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Bool"}}}, "id": {"description": null, "arguments": {}, "type": {"type": "named", "name": "Int"}}, "score": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}, "vector": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}}, "recipe": {"description": null, "fields": {"contributor_id": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "description": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "ingredients": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "minutes": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "n_ingredients": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "n_steps": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "name": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "nutrition": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}}}, "steps": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "submitted": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "tags": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "vector_text": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "id": {"description": null, "arguments": {}, "type": {"type": "named", "name": "Int"}}, "score": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}, "vector": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}}}, "collections": [{"name": "articles", "description": null, "arguments": {"vector": {"type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}, "type": "article", "deletable": false, "uniqueness_constraints": {"ArticleByID": {"unique_columns": ["id"]}}, "foreign_keys": {}}, {"name": "booleans", "description": null, "arguments": {"vector": {"type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}, "type": "boolean", "deletable": false, "uniqueness_constraints": {"BooleanByID": {"unique_columns": ["id"]}}, "foreign_keys": {}}, {"name": "recipes", "description": null, "arguments": {"vector": {"type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}, "type": "recipe", "deletable": false, "uniqueness_constraints": {"RecipeByID": {"unique_columns": ["id"]}}, "foreign_keys": {}}]}
+
+{
+    "collection": "recipes",
+    "arguments": {
+        "search": {
+            "type": "literal",
+            "value": "It will take 45 minutes to make this recipe.\nThis recipe is named: alouette  potatoes\nThe ingredients for this recipe are: spreadable cheese with garlic and herbs, new potatoes, shallots, parsley, tarragon, olive oil, red wine vinegar, salt, pepper, red bell pepper, yellow bell pepper\n"
+        },
+        "searchModel": {
+            "type": "literal",
+            "value": "all-MiniLM-L6-v2"
+        },
+        "searchUrl": {
+            "type": "literal",
+            "value": "http://localhost:8102/text_transform/"
+        }
+    },
+    "query": {
+        "fields": {
+            "id": {
+                "type": "column",
+                "column": "id"
+            },
+            "score": {
+                "type": "column",
+                "column": "score"
+            },
+            "name": {
+                "type": "column",
+                "column": "name"
+            },
+            "ingredients": {
+                "type": "column",
+                "column": "ingredients"
+            },
+            "steps": {
+                "type": "column",
+                "column": "steps"
+            },
+            "vector_text": {
+                "type": "column",
+                "column": "vector_text"
+            }
+        }
+    },
+    "collection_relationships": {}
+}

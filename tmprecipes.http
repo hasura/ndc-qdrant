@@ -1,0 +1,27 @@
+POST http://localhost:8101/query
+Content-Type: application/json
+schema: {"object_types": {"recipe": {"description": null, "fields": {"contributor_id": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "description": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "ingredients": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "minutes": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "n_ingredients": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "n_steps": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Int"}}}, "name": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "nutrition": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}}}, "steps": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "submitted": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "tags": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}}}, "vector_text": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "String"}}}, "id": {"description": null, "arguments": {}, "type": {"type": "named", "name": "Int"}}, "score": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "named", "name": "Float"}}}, "vector": {"description": null, "arguments": {}, "type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}}}, "collections": [{"name": "recipes", "description": null, "arguments": {"vector": {"type": {"type": "nullable", "underlying_type": {"type": "array", "element_type": {"type": "named", "name": "Float"}}}}}, "type": "recipe", "deletable": false, "uniqueness_constraints": {"RecipeByID": {"unique_columns": ["id"]}}, "foreign_keys": {}}]}
+qdrant_url: http://localhost:6333
+
+{
+    "collection": "recipes",
+    "arguments": {},
+    "query": {
+        "fields": {
+            "id": {
+                "type": "column",
+                "column": "id"
+            },
+            "vector": {
+                "type": "column",
+                "column": "vector"
+            },
+            "name": {
+                "type": "column",
+                "column": "name"
+            }
+        },
+        "limit": 10
+    },
+    "collection_relationships": {}
+}

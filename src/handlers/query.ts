@@ -3,12 +3,13 @@ import { QueryResponse, RowSet, Row } from "../schemas/QueryResponse";
 import { QdrantConfig } from "../config";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
+import axios from 'axios';
 
 type QueryFilter = components["schemas"]["Filter"];
 
-interface VarSet {
+type VarSet = {
     [key: string]: any
-}
+};
 
 // Helper function to determine if a value is a float
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
@@ -49,7 +50,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                 case "column":
                     throw new Error("Binary comparison operator on column Not implemented");
                 case "variable":
-                    if (varSet !== null){
+                    if (varSet !== null) {
                         value = varSet[expression.value.name];
                     }
                     break;
@@ -64,14 +65,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                                 "has_id": [value]
                             }
                         ];
-                    } else if (!isFloat(value)) {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                match: { value }
-                            }
-                        ];
-                    } else {
+                    } else if (typeof value === "number" && isFloat(value)) {
                         filter.must = [
                             {
                                 key: expression.column.name,
@@ -82,6 +76,16 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     }
+                    else if (typeof value === "string" || typeof value === "boolean" || typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                match: { value }
+                            }
+                        ];
+                    } else {
+                        throw new Error("Not implemented");
+                    }
                     break;
                 case "like":
                     if (typeof value === "string") {
@@ -90,6 +94,74 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                                 key: expression.column.name,
                                 match: {
                                     "text": value
+                                }
+                            }
+                        ]
+                    } else {
+                        throw new Error("Not Implemented");
+                    }
+                    break;
+                case "gt":
+                    if (expression.column.name === "id") {
+                        throw Error("Not Implemented");
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    gt: value
+                                }
+                            }
+                        ]
+                    } else {
+                        throw new Error("Not Implemented");
+                    }
+                    break;
+                case "lt":
+                    if (expression.column.name === "id") {
+                        throw Error("Not Implemented");
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    lt: value
+                                }
+                            }
+                        ]
+                    } else {
+                        throw new Error("Not Implemented");
+                    }
+                    break;
+                case "gte":
+                    if (expression.column.name === "id") {
+                        throw Error("Not Implemented");
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    gte: value
+                                }
+                            }
+                        ]
+                    } else {
+                        throw new Error("Not Implemented");
+                    }
+                    break;
+                case "lte":
+                    if (expression.column.name === "id") {
+                        throw Error("Not Implemented");
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    lte: value
                                 }
                             }
                         ]
@@ -118,8 +190,8 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     throw new Error("Vector in not implemented");
                 }
                 let matchList: any[] = [];
-                for (let val of expression.values){
-                    switch (val.type){
+                for (let val of expression.values) {
+                    switch (val.type) {
                         case "scalar":
                             matchList.push(val.value);
                             break;
@@ -186,7 +258,7 @@ async function queryDatabase(
     includePayload: boolean,
     includeScore: boolean,
     varSet: VarSet | null): Promise<RowSet> {
-    let client = getQdrantClient(config);
+    let client = getQdrantClient(config.clientConfig);
     // Recursively build the query filter.
     let filter: QueryFilter = {};
     if (query.query.where !== undefined) {
@@ -194,9 +266,9 @@ async function queryDatabase(
     }
 
     let aggKeys: string[] = [];
-    if (Array.isArray(query.query.aggregates)){
-        for (let [_, agg] of Object.entries(query.query.aggregates)){
-            if (agg.type !== "star_count"){
+    if (Array.isArray(query.query.aggregates)) {
+        for (let [_, agg] of Object.entries(query.query.aggregates)) {
+            if (agg.type !== "star_count") {
                 aggKeys.push(agg.column);
             }
         }
@@ -204,8 +276,8 @@ async function queryDatabase(
 
     // In order to properly calculate aggregation, we need to ensure we get all aggregate fields to calculate the aggregates, even if we drop some.
     let aggRemoveRows: string[] = [];
-    for (let row of aggKeys){
-        if (!includedPayloadFields.includes(row)){
+    for (let row of aggKeys) {
+        if (!includedPayloadFields.includes(row)) {
             includedPayloadFields.push(row);
             aggRemoveRows.push(row);
         }
@@ -216,9 +288,9 @@ async function queryDatabase(
     let res: any = null;
     if (vectorSearch) {
         let v: number[] = [];
-        if (query.arguments.vector.type === "literal"){
+        if (query.arguments.vector.type === "literal") {
             v = query.arguments.vector.value as number[];
-        } else if (query.arguments.vector.type === "variable" && varSet !== null){
+        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
             v = varSet[query.arguments.vector.name] as number[];
         } else {
             throw new Error("Not Implemented");
@@ -247,8 +319,8 @@ async function queryDatabase(
 
 
     // Prep for aggregates
-    let agg_res: {[key: string]: any} = {};
-    let agg_vars: {[key: string]: any[]} = {};
+    let agg_res: { [key: string]: any } = {};
+    let agg_vars: { [key: string]: any[] } = {};
 
     let rowSet: RowSet = {};
     let rows: Row[] = [];
@@ -274,20 +346,20 @@ async function queryDatabase(
         }
 
         // Calculate aggregate
-        if (query.query.aggregates !== undefined && query.query.aggregates !== null){
-            for (let [key, agg] of Object.entries(query.query.aggregates)){
-                switch (agg.type){
+        if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
+            for (let [key, agg] of Object.entries(query.query.aggregates)) {
+                switch (agg.type) {
                     case "single_column":
-                        switch (agg.function){
+                        switch (agg.function) {
                             case "sum":
-                                if (typeof row[agg.column] === "number"){
-                                    if (agg_res[key] === undefined){
+                                if (typeof row[agg.column] === "number") {
+                                    if (agg_res[key] === undefined) {
                                         agg_res[key] = 0;
                                     }
                                     agg_res[key] += row[agg.column];
                                     break;
-                                } else if (typeof row[agg.column] === "string"){ // I added a string aggregate, it might be useful but the sort order isn't maintained on string agg.
-                                    if (agg_res[key] === undefined){
+                                } else if (typeof row[agg.column] === "string") { // I added a string aggregate, might be useful. ;)
+                                    if (agg_res[key] === undefined) {
                                         agg_res[key] = "";
                                     }
                                     agg_res[key] += row[agg.column];
@@ -296,8 +368,8 @@ async function queryDatabase(
                                     throw new Error("Not implemented");
                                 }
                             case "avg":
-                                if (typeof row[agg.column] === "number"){
-                                    if (agg_res[key] === undefined){
+                                if (typeof row[agg.column] === "number") {
+                                    if (agg_res[key] === undefined) {
                                         agg_res[key] = 0;
                                     }
                                     agg_res[key] += (row[agg.column] as number / res.length) as number;
@@ -310,15 +382,15 @@ async function queryDatabase(
                         }
                         break;
                     case "column_count":
-                        if (agg_vars[key] === undefined){
+                        if (agg_vars[key] === undefined) {
                             agg_vars[key] = [];
                         }
-                        if (agg_res[key] === undefined){
+                        if (agg_res[key] === undefined) {
                             agg_res[key] = 0;
                         }
-                        if (row[agg.column] !== null && row[agg.column] !== undefined){
-                            if (agg.distinct){
-                                if (Array.isArray(agg_vars[key]) && !agg_vars[key].includes(row[agg.column])){
+                        if (row[agg.column] !== null && row[agg.column] !== undefined) {
+                            if (agg.distinct) {
+                                if (Array.isArray(agg_vars[key]) && !agg_vars[key].includes(row[agg.column])) {
                                     agg_vars[key].push(row[agg.column]);
                                     agg_res[key] += 1;
                                 }
@@ -328,7 +400,7 @@ async function queryDatabase(
                         }
                         break;
                     case "star_count":
-                        if (agg_res[key] === undefined){
+                        if (agg_res[key] === undefined) {
                             agg_res[key] = 0;
                         }
                         agg_res[key] += 1;
@@ -339,13 +411,13 @@ async function queryDatabase(
             }
         }
         // Remove the rows needed to calculate the aggregate but not returned in the field.
-        for (let undef of aggRemoveRows){
+        for (let undef of aggRemoveRows) {
             row[undef] = undefined;
         }
         rows.push(row);
     }
     rowSet.rows = rows;
-    if (Object.keys(agg_res).length > 0){
+    if (Object.keys(agg_res).length > 0) {
         rowSet.aggregates = agg_res;
     } else {
         rowSet.aggregates = null;
@@ -377,21 +449,53 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         throw new Error("Querying with null fields not implemented yet!");
     }
 
-    if (query.query.order_by !== undefined && query.query.order_by !== null){
+    if (query.query.order_by !== undefined && query.query.order_by !== null) {
         throw new Error("Order by not implemented");
     }
 
     const individualCollectionName: string = query.collection.slice(0, -1);
     let vectorSearch: boolean = false;
     let args = Object.keys(query.arguments);
+    let textParamCounter: number = 0;
+    // Add more args here!
     for (let arg of args) {
         switch (arg) {
             case "vector":
                 vectorSearch = true;
                 break;
+            case "search":
+                textParamCounter += 1;
+                break;
+            case "searchModel":
+                textParamCounter += 1;
+                break;
+            case "searchUrl":
+                textParamCounter += 1;
+                break;
             default:
                 throw new Error("Argument not implemented");
         }
+    }
+
+    // Adding the ability to call an external API to get embeddings from a string of text.
+    if (textParamCounter === 3) {
+        let search: string = query.arguments.search.value as string;
+        let searchUrl: string = query.arguments.searchUrl.value as string;
+        let searchModel: string = query.arguments.searchModel.value as string;
+        const response = await axios.post(searchUrl, {
+            search: search,
+            model: searchModel
+        });
+        let responseData: number[] = response.data;
+        query.arguments.vector = {
+            type: "literal",
+            value: responseData
+        };
+        // TODO: FIX THIS so the search is accurate?
+        // MARK: HERE!!!
+        vectorSearch = true;
+    } else if (textParamCounter > 0) {
+        throw new Error("You must provide a search, searchModel, and searchUrl to perform a text-search");
     }
 
     // This is where the response will go.
@@ -419,7 +523,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         }
     }
 
-    if (query.variables === undefined || query.variables === null){
+    if (query.variables === undefined || query.variables === null) {
         let res = await queryDatabase(
             query,
             config,
@@ -451,7 +555,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
             );
         });
         let results = await Promise.all(promises);
-        for (let result of results){
+        for (let result of results) {
             rowSets.push(result);
         }
     }

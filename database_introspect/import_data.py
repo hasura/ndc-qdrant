@@ -28,7 +28,7 @@ def main(file: str = "data.json",
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A script to interact with Qdrant.')
-    parser.add_argument('--file', type=str, default="data.json", help='Path to the data file.')
+    parser.add_argument('--file', type=str, default="datasets/test.json", help='Path to the data file.')
     parser.add_argument('--qdrant_url', type=str, default="localhost", help='Qdrant server URL.')
     parser.add_argument('--qdrant_port', type=int, default=6333, help='Qdrant server port.')
     parser.add_argument('--qdrant_api_key', type=str, default=None, help='Qdrant API key.')
