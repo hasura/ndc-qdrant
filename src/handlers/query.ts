@@ -1,14 +1,23 @@
 import { QueryRequest, Expression } from "../schemas/QueryRequest";
-import { QueryResponse, RowSet, Row } from "../schemas/QueryResponse";
+import { QueryResponse, RowSet, Row, RowFieldValue } from "../schemas/QueryResponse";
 import { QdrantConfig } from "../config";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
+import { MAX_32_INT } from "../constants";
 import axios from 'axios';
 
+
 type QueryFilter = components["schemas"]["Filter"];
+type SearchRequest = components["schemas"]["SearchRequest"];
+type ScrollRequest = components["schemas"]["ScrollRequest"];
 
 type VarSet = {
     [key: string]: any
+};
+
+type QueryCollection = {
+    searchRequest: SearchRequest | null;
+    scrollRequest: ScrollRequest | null;
 };
 
 // Helper function to determine if a value is a float
@@ -234,195 +243,144 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
 /**
  * Queries the database based on various parameters and returns the results as a RowSet.
  * 
- * @async
  * @param {QueryRequest} query - The query request object.
- * @param {QdrantConfig} config - The Qdrant configuration object.
- * @param {string} individualCollectionName - The name of the individual collection.
  * @param {boolean} vectorSearch - A flag indicating whether to perform a vector search.
  * @param {string[]} includedPayloadFields - The payload fields to include in the response.
  * @param {boolean} includeVector - A flag indicating whether to include vectors in the response.
- * @param {boolean} includeId - A flag indicating whether to include IDs in the response.
- * @param {boolean} includePayload - A flag indicating whether to include payload in the response.
- * @param {boolean} includeScore - A flag indicating whether to include score in the response.
  * @param {VarSet | null} varSet - The set of variables to be used in the query.
  * @returns {Promise<RowSet>} - The results of the query as a RowSet.
  */
-async function queryDatabase(
-    query: QueryRequest,
-    config: QdrantConfig,
-    individualCollectionName: string,
+async function collectQueries(query: QueryRequest,
     vectorSearch: boolean,
     includedPayloadFields: string[],
     includeVector: boolean,
-    includeId: boolean,
-    includePayload: boolean,
-    includeScore: boolean,
-    varSet: VarSet | null): Promise<RowSet> {
-    let client = getQdrantClient(config.clientConfig);
+    varSet: VarSet | null): Promise<QueryCollection> {
     // Recursively build the query filter.
     let filter: QueryFilter = {};
     if (query.query.where !== undefined) {
         filter = recursiveBuildFilter(query.query.where!, filter, varSet);
     }
 
-    let aggKeys: string[] = [];
-    if (Array.isArray(query.query.aggregates)) {
-        for (let [_, agg] of Object.entries(query.query.aggregates)) {
-            if (agg.type !== "star_count") {
-                aggKeys.push(agg.column);
-            }
-        }
-    }
-
-    // In order to properly calculate aggregation, we need to ensure we get all aggregate fields to calculate the aggregates, even if we drop some.
-    let aggRemoveRows: string[] = [];
-    for (let row of aggKeys) {
-        if (!includedPayloadFields.includes(row)) {
-            includedPayloadFields.push(row);
-            aggRemoveRows.push(row);
-        }
-    }
-
-
-
-    let res: any = null;
+    let searchRequest: SearchRequest | null = null;
+    let scrollRequest: ScrollRequest | null = null;
     if (vectorSearch) {
         let v: number[] = [];
-        if (query.arguments.vector.type === "literal") {
+        if (query.arguments.vector.type === "literal"){
             v = query.arguments.vector.value as number[];
-        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
+        } else if (query.arguments.vector.type === "variable" && varSet !== null){
             v = varSet[query.arguments.vector.name] as number[];
         } else {
-            throw new Error("Not Implemented");
+            throw new Error("Not implemented");
         }
-        res = await client.search(individualCollectionName, {
+        searchRequest = {
             vector: v,
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
             },
             filter: filter,
-            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : undefined,
-            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : undefined
-        });
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+        }
     } else {
-        res = (await client.scroll(individualCollectionName, {
+        scrollRequest = {
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
             },
             filter: filter,
-            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : undefined,
-            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : undefined
-        })).points;
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+        }
     }
 
+    if (searchRequest === null && scrollRequest === null){
+        throw new Error("Must supply a search request or a scroll request.");
+    }
 
-    // Prep for aggregates
-    let agg_res: { [key: string]: any } = {};
-    let agg_vars: { [key: string]: any[] } = {};
+    let queryCollection: QueryCollection = {
+        searchRequest: searchRequest,
+        scrollRequest: scrollRequest
+    };
+    return queryCollection;
+}
 
-    let rowSet: RowSet = {};
-    let rows: Row[] = [];
-    for (let p of res) {
-        let row: Row = {};
-        if (includeId || includedPayloadFields.includes("id")) {
-            row.id = p.id;
-        }
-        if (includeVector || includedPayloadFields.includes("vector")) {
-            row.vector = p.vector!;
-        }
-        if (includeScore || includedPayloadFields.includes("score")) {
-            row.score = p.score !== undefined ? p.score : null;
-        }
-        if (includePayload) {
-            for (let row_name of includedPayloadFields) {
-                if (p.payload![row_name] === undefined || p.payload![row_name] === null) {
-                    row[row_name] = null;
-                } else {
-                    row[row_name] = p.payload![row_name];
-                }
-            }
-        }
-
-        // Calculate aggregate
-        if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
-            for (let [key, agg] of Object.entries(query.query.aggregates)) {
-                switch (agg.type) {
-                    case "single_column":
-                        switch (agg.function) {
-                            case "sum":
-                                if (typeof row[agg.column] === "number") {
-                                    if (agg_res[key] === undefined) {
-                                        agg_res[key] = 0;
-                                    }
-                                    agg_res[key] += row[agg.column];
-                                    break;
-                                } else if (typeof row[agg.column] === "string") { // I added a string aggregate, might be useful. ;)
-                                    if (agg_res[key] === undefined) {
-                                        agg_res[key] = "";
-                                    }
-                                    agg_res[key] += row[agg.column];
-                                    break;
-                                } else {
-                                    throw new Error("Not implemented");
+/**
+ * Mutates the aggResults and aggVars to add-on aggregation in the required O(N*P) where N is the number of rows, and P is the number of aggregates to take
+ * 
+ * @param aggResults The current aggregate results
+ * @param aggVars Any variables needed accross the aggregates
+ * @param query The query object
+ * @param row The row to use to mutate the aggregation object
+ * @param numRows The number of rows in total. (Useful for avg and other aggregates)
+ * @returns - None, mutates the aggResults in place
+ */
+function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]: any},  query: QueryRequest, row: Row, numRows: number): {[key: string]: any} {
+    if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
+        for (let [key, agg] of Object.entries(query.query.aggregates)) {
+            switch (agg.type) {
+                case "single_column":
+                    switch (agg.function) {
+                        case "sum":
+                            if (typeof row[agg.column] === "number") {
+                                if (aggResults[key] === undefined) {
+                                    aggResults[key] = 0;
                                 }
-                            case "avg":
-                                if (typeof row[agg.column] === "number") {
-                                    if (agg_res[key] === undefined) {
-                                        agg_res[key] = 0;
-                                    }
-                                    agg_res[key] += (row[agg.column] as number / res.length) as number;
-                                    break;
-                                } else {
-                                    throw new Error("Not implemented");
+                                aggResults[key] += row[agg.column];
+                                break;
+                            } else if (typeof row[agg.column] === "string") { // I added a string aggregate, might be useful. ;)
+                                if (aggResults[key] === undefined) {
+                                    aggResults[key] = "";
                                 }
-                            default:
-                                throw new Error("Not implemented");
-                        }
-                        break;
-                    case "column_count":
-                        if (agg_vars[key] === undefined) {
-                            agg_vars[key] = [];
-                        }
-                        if (agg_res[key] === undefined) {
-                            agg_res[key] = 0;
-                        }
-                        if (row[agg.column] !== null && row[agg.column] !== undefined) {
-                            if (agg.distinct) {
-                                if (Array.isArray(agg_vars[key]) && !agg_vars[key].includes(row[agg.column])) {
-                                    agg_vars[key].push(row[agg.column]);
-                                    agg_res[key] += 1;
-                                }
+                                aggResults[key] += row[agg.column];
+                                break;
                             } else {
-                                agg_res[key] += 1;
+                                throw new Error("Not implemented");
                             }
+                        case "avg":
+                            if (typeof row[agg.column] === "number") {
+                                if (aggResults[key] === undefined) {
+                                    aggResults[key] = 0;
+                                }
+                                aggResults[key] += (row[agg.column] as number / numRows) as number;
+                                break;
+                            } else {
+                                throw new Error("Not implemented");
+                            }
+                        default:
+                            throw new Error("Not implemented");
+                    }
+                    break;
+                case "column_count":
+                    if (aggVars[key] === undefined) {
+                        aggVars[key] = [];
+                    }
+                    if (aggResults[key] === undefined) {
+                        aggResults[key] = 0;
+                    }
+                    if (row[agg.column] !== null && row[agg.column] !== undefined) {
+                        if (agg.distinct) {
+                            if (Array.isArray(aggVars[key]) && !aggVars[key].includes(row[agg.column])) {
+                                aggVars[key].push(row[agg.column]);
+                                aggResults[key] += 1;
+                            }
+                        } else {
+                            aggResults[key] += 1;
                         }
-                        break;
-                    case "star_count":
-                        if (agg_res[key] === undefined) {
-                            agg_res[key] = 0;
-                        }
-                        agg_res[key] += 1;
-                        break;
-                    default:
-                        throw new Error("Not implemented");
-                }
+                    }
+                    break;
+                case "star_count":
+                    if (aggResults[key] === undefined) {
+                        aggResults[key] = 0;
+                    }
+                    aggResults[key] += 1;
+                    break;
+                default:
+                    throw new Error("Not implemented");
             }
         }
-        // Remove the rows needed to calculate the aggregate but not returned in the field.
-        for (let undef of aggRemoveRows) {
-            row[undef] = undefined;
-        }
-        rows.push(row);
     }
-    rowSet.rows = rows;
-    if (Object.keys(agg_res).length > 0) {
-        rowSet.aggregates = agg_res;
-    } else {
-        rowSet.aggregates = null;
-    }
-    return rowSet;
+    return aggResults;
 }
 
 /**
@@ -449,6 +407,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         throw new Error("Querying with null fields not implemented yet!");
     }
 
+    // Sorting not supported by database!
     if (query.query.order_by !== undefined && query.query.order_by !== null) {
         throw new Error("Order by not implemented");
     }
@@ -457,7 +416,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     let vectorSearch: boolean = false;
     let args = Object.keys(query.arguments);
     let textParamCounter: number = 0;
-    // Add more args here!
+    // Handle the argument collection
     for (let arg of args) {
         switch (arg) {
             case "vector":
@@ -479,6 +438,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
 
     // Adding the ability to call an external API to get embeddings from a string of text.
     if (textParamCounter === 3) {
+        // What if we smashed vectors together. To combine multiple sensory vectors, i.e. images, text, and audio... vector into a bigger vector by combining the vector of an image and some text? 🤔💭
         let search: string = query.arguments.search.value as string;
         let searchUrl: string = query.arguments.searchUrl.value as string;
         let searchModel: string = query.arguments.searchModel.value as string;
@@ -491,73 +451,190 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
             type: "literal",
             value: responseData
         };
-        // TODO: FIX THIS so the search is accurate?
-        // MARK: HERE!!!
         vectorSearch = true;
     } else if (textParamCounter > 0) {
         throw new Error("You must provide a search, searchModel, and searchUrl to perform a text-search");
     }
 
-    // This is where the response will go.
-    let rowSets: RowSet[] = [];
-
-    // When adding aggregates, we will need to get the fields even if we throw them out afterwards!
     // Collect the payload fields to include in the response. 
     let includedPayloadFields: string[] = [];
+    let orderedFields: string[] = [];
     let includeVector: boolean = false;
-    let includeId: boolean = false;
-    let includePayload: boolean = false;
-    let includeScore: boolean = false;
-    for (let f of Object.keys(query.query.fields!)) {
-        if (f === "id") {
-            includeId = true;
-        } else if (f === "vector") {
+    for (const f in query.query.fields) {
+        if (f === "vector") {
             includeVector = true;
-        } else if (f === "score") {
-            includeScore = true;
-        } else if (!config.collectionFields[individualCollectionName].includes(f)) {
+        }  else if (!config.collectionFields[individualCollectionName].includes(f)) {
             throw new Error("Requested field not in schema!");
         } else {
             includedPayloadFields.push(f);
-            includePayload = true;
         }
+        // Hasura needs to maintain field ordering, so I would think the connector will as well?
+        orderedFields.push(f);
     }
 
-    if (query.variables === undefined || query.variables === null) {
-        let res = await queryDatabase(
+    // Here we collect all the queries we might want to make.
+    let scrollQueries: ScrollRequest[] = [];
+    let searchQueries: SearchRequest[] = [];
+    let queryResponse: QueryCollection;
+    if (query.variables === undefined || query.variables === null){
+        // In the simplest case, we do not have any variables! So we will only have 1 request to make.
+        queryResponse = await collectQueries(
             query,
-            config,
-            individualCollectionName,
             vectorSearch,
             includedPayloadFields,
             includeVector,
-            includeId,
-            includePayload,
-            includeScore,
             null
         );
-        rowSets.push(res);
+        if (queryResponse.scrollRequest !== null){
+            scrollQueries.push(queryResponse.scrollRequest);
+        } else if (queryResponse.searchRequest !== null){
+            searchQueries.push(queryResponse.searchRequest);
+        } else {
+            throw new Error("Not Implemented");
+        }
     } else {
-        // Call these asynchronously
+        // When there are variables, we will build multiple queries, which we will either run concurrently, or as a batch if batching is supported. It's only possible to either perform ALL searches, or ALL scrolls.
         let promises = query.variables.map(varSet => {
-            let vSet: VarSet = varSet;
-            return queryDatabase(
+        let vSet: VarSet = varSet;
+            return collectQueries(
                 query,
-                config,
-                individualCollectionName,
                 vectorSearch,
                 includedPayloadFields,
                 includeVector,
-                includeId,
-                includePayload,
-                includeScore,
                 vSet
             );
         });
         let results = await Promise.all(promises);
-        for (let result of results) {
-            rowSets.push(result);
+        for (let result of results){
+            if (result.scrollRequest !== null){
+                scrollQueries.push(result.scrollRequest);
+            } else if (result.searchRequest !== null){
+                searchQueries.push(result.searchRequest);
+            } else {
+                throw new Error("Not implemented");
+            }
         }
+    };
+
+    if (scrollQueries.length > 0 && searchQueries.length > 0){
+        // All queries are either a "scroll" -> full scan or a "search" -> vector search
+        throw new Error("Not implemented");
+    }
+
+    let aggKeys: string[] = [];
+    let aggRemoveRows: string[] = [];
+    if (Array.isArray(query.query.aggregates)) {
+        for (let [_, agg] of Object.entries(query.query.aggregates)) {
+            if (agg.type !== "star_count") {
+                aggKeys.push(agg.column);
+                if (!includedPayloadFields.includes(agg.column)) {
+                    includedPayloadFields.push(agg.column);
+                    aggRemoveRows.push(agg.column);
+                }
+            }
+        }
+    }
+
+    // This is where the response will go.
+    let rowSets: RowSet[] = [];
+
+    // Scroll Queries are a list of scroll requests
+    // SearchQueries are a list of search requests and can be batched!
+    if (scrollQueries.length > 0) {
+        // Run the scrollQueries
+        let promises = scrollQueries.map(scrollQuery => {
+            let client = getQdrantClient(config.clientConfig);
+            return client.scroll(individualCollectionName, scrollQuery);
+        });
+        let results = await Promise.all(promises);
+        for (let result of results){
+            let rowSet: RowSet = {};
+            let rows: Row[] = [];
+            let aggResults: {[key: string]: any} = {};
+            let aggVars: {[key: string]: any} = {};
+            for (let p of result.points){
+                let row: Row = {};
+                for (let rowField of orderedFields){
+                    if (rowField === "id"){
+                        row.id = p.id;
+                    } else if (rowField === "vector") {
+                        row.vector = p.vector as number[];
+                    } else {
+                        if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
+                            row[rowField] = null;
+                        } else if (p.payload !== undefined && p.payload !== null){
+                            row[rowField] = p.payload[rowField] as RowFieldValue;
+                        } else {
+                            throw new Error("Not implemented");
+                        }
+                    } 
+                }
+                rowAggregate(aggResults, aggVars, query, row, result.points.length);
+                for (let undef of aggRemoveRows){
+                    row[undef] = undefined;
+                }
+                rows.push(row);
+            }
+            rowSet.rows = rows;
+            if (Object.keys(aggResults).length > 0){
+                rowSet.aggregates = aggResults;
+            } else {
+                // TODO: Might want to remove this actually instead of having it return null but will need to change in tests!!
+                rowSet.aggregates = null;
+            }
+            rowSets.push(rowSet);
+        }
+    } else if (searchQueries.length > 0){
+        // Run the searchQueries as a batch!
+        let client = getQdrantClient(config.clientConfig);
+        let results = await client.searchBatch(individualCollectionName, {searches: searchQueries});
+
+        for (let result of results){
+            let rowSet: RowSet = {};
+            let rows: Row[] = [];
+            let aggResults: {[key: string]: any} = {};
+            let aggVars: {[key: string]: any} = {};
+            for (let p of result){
+                let row: Row = {};
+                for (let rowField of orderedFields){
+                    if (rowField === "id"){
+                        row.id = p.id;
+                    } else if (rowField === "vector") {
+                        row.vector = p.vector as number[];
+                    } else if (rowField === "score") {
+                        row.score = p.score;
+                    } else if (rowField === "version"){
+                        row.version = p.version;
+                    } else {
+                        if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
+                            row[rowField] = null;
+                        } else if (p.payload !== undefined && p.payload !== null){
+                            row[rowField] = p.payload[rowField] as RowFieldValue;
+                        } else {
+                            throw new Error("Not implemented");
+                        }
+                    } 
+                }
+                rowAggregate(aggResults, aggVars, query, row, result.length);
+                for (let undef of aggRemoveRows){
+                    row[undef] = undefined;
+                }
+                rows.push(row);
+            }
+            rowSet.rows = rows;
+            if (Object.keys(aggResults).length > 0){
+                rowSet.aggregates = aggResults;
+            } else {
+                // TODO: Might want to remove this actually instead of having it return null but will need to change in tests!!
+                rowSet.aggregates = null;
+            }
+            rowSets.push(rowSet);
+        }
+    } else {
+        throw new Error("Not implemented");
+    }
+    if (scrollQueries.length === 0 && searchQueries.length === 0){
+        throw new Error("Not implemented!");
     }
     return rowSets;
 }

@@ -6,6 +6,8 @@ export const HOST: string = "0.0.0.0";
 export const PORT: number = 8101;
 export const ORIGIN: string = "*"; // This might not be safe in a production environment and may need changed!
 export const DEFAULT_QDRANT_URL: string = "http://localhost:6333";
+export const MAX_32_INT: number = 2147483647;
+export const LOG_REQUESTS: boolean = false;
 export const CAPABILITIES: CapabilitiesResponse = {
     "versions": "^0.1.0",
     "capabilities": {

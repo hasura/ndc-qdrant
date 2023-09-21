@@ -14,7 +14,8 @@ export type QueryResponse = RowSet[];
 export interface Row {
   id?: string | number;
   vector?: number[];
-  score?: string;
+  score?: number;
+  version?: number;
   [key: string]: RowFieldValue;
 }
 
