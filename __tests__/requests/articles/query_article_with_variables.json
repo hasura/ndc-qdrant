@@ -53,8 +53,7 @@
                     "string": "Berlin",
                     "bool": true
                 }
-            ],
-            "aggregates": null
+            ]
         },
         {
             "rows": [
@@ -63,8 +62,7 @@
                     "string": "New York",
                     "bool": null
                 }
-            ],
-            "aggregates": null
+            ]
         }
     ]
 }

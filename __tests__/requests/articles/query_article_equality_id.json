@@ -55,8 +55,7 @@
                     "string": "Berlin",
                     "bool": true
                 }
-            ],
-            "aggregates": null
+            ]
         }
     ]
 }

@@ -69,8 +69,7 @@
                     "string": "Moscow",
                     "bool": false
                 }
-            ],
-            "aggregates": null
+            ]
         },
         {
             "rows": [
@@ -86,8 +85,7 @@
                     "string": "Beijing",
                     "bool": false
                 }
-            ],
-            "aggregates": null
+            ]
         }
     ]
 }

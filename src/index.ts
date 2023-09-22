@@ -1,20 +1,21 @@
-import {SchemaResponse, ObjectType, CollectionInfo} from "ts-connector-sdk/schemas/SchemaResponse";
+import { SchemaResponse, ObjectType, CollectionInfo } from "ts-connector-sdk/schemas/SchemaResponse";
 import { QueryRequest } from "ts-connector-sdk/schemas/QueryRequest";
 import { QueryResponse } from "ts-connector-sdk/schemas/QueryResponse";
 import { MutationRequest } from "ts-connector-sdk/schemas/MutationRequest";
 import { MutationResponse } from "ts-connector-sdk/schemas/MutationResponse";
 import { CapabilitiesResponse } from "ts-connector-sdk/schemas/CapabilitiesResponse";
 import { ExplainResponse } from "ts-connector-sdk/schemas/ExplainResponse";
-import {Connector} from "ts-connector-sdk/src/connector";
-import {start} from "ts-connector-sdk/src/index";
+import { Connector } from "ts-connector-sdk/src/connector";
+import { start } from "ts-connector-sdk/src/index";
 import { CAPABILITIES_RESPONSE, SCALAR_TYPES, FUNCTIONS, PROCEDURES } from "./constants";
 import { postQuery } from "./handlers/query";
 import { getQdrantClient } from "./qdrant";
+import { explainQuery } from "./handlers/explain";
 
 export interface Configuration {
     read_regions: string[];
     write_regions: string[];
-    object_types: {[k: string]: ObjectType};
+    object_types: { [k: string]: ObjectType };
     collections: CollectionInfo[];
     qdrant_url: string;
     qdrant_api_key: string | null;
@@ -22,8 +23,8 @@ export interface Configuration {
 
 export interface State {
     schema: SchemaResponse;
-    collections: string[];
-    collectionFields: {[collectionName: string]: string[]};
+    collectionNames: string[];
+    collectionFields: { [collectionName: string]: string[] };
 }
 
 const connector: Connector<Configuration, State> = {
@@ -45,10 +46,10 @@ const connector: Connector<Configuration, State> = {
      * Return any write regions defined in the connector's configuration
      * @param configuration
      */
-    get_write_regions(configuration: Configuration): string[]{
+    get_write_regions(configuration: Configuration): string[] {
         return configuration.write_regions;
     },
-  
+
     make_empty_configuration(): Configuration {
         const conf: Configuration = {
             read_regions: [],
@@ -61,7 +62,7 @@ const connector: Connector<Configuration, State> = {
         return conf;
     },
 
-    update_configuration(configuration: Configuration): Promise<Configuration>{
+    update_configuration(configuration: Configuration): Promise<Configuration> {
         // TODO: What should this do?
         return Promise.resolve(configuration);
     },
@@ -71,12 +72,12 @@ const connector: Connector<Configuration, State> = {
      * @param configuration
      */
     validate_raw_configuration(
-      configuration: Configuration
+        configuration: Configuration
     ): Promise<Configuration> {
         // TODO
         return Promise.resolve(configuration);
     },
-  
+
     /**
      * Initialize the connector's in-memory state.
      *
@@ -89,8 +90,8 @@ const connector: Connector<Configuration, State> = {
      * @param metrics
      */
     try_init_state(
-      configuration: Configuration,
-      metrics: unknown
+        configuration: Configuration,
+        metrics: unknown
     ): Promise<State> {
         const schemaResponse: SchemaResponse = {
             scalar_types: SCALAR_TYPES,
@@ -109,12 +110,12 @@ const connector: Connector<Configuration, State> = {
         }
         const state: State = {
             schema: schemaResponse,
-            collections: cols,
+            collectionNames: cols,
             collectionFields: collectionFields
         };
         return Promise.resolve(state);
     },
-    
+
     /**
      *
      * Update any metrics from the state
@@ -139,12 +140,12 @@ const connector: Connector<Configuration, State> = {
      * @param configuration
      * @param state
      */
-    health_check(configuration: Configuration, state: State): Promise<undefined>{
+    health_check(configuration: Configuration, state: State): Promise<undefined> {
         // TODO
         const client = getQdrantClient(configuration.qdrant_url, configuration.qdrant_api_key);
         return Promise.resolve(undefined);
     },
-  
+
     /**
      * Get the connector's capabilities.
      *
@@ -153,10 +154,9 @@ const connector: Connector<Configuration, State> = {
      * @param configuration
      */
     get_capabilities(_: Configuration): Promise<CapabilitiesResponse> {
-        const capabilitiesResponse: CapabilitiesResponse = CAPABILITIES_RESPONSE;
-        return Promise.resolve(capabilitiesResponse);
+        return Promise.resolve(CAPABILITIES_RESPONSE);
     },
-  
+
     /**
      * Get the connector's schema.
      *
@@ -164,7 +164,7 @@ const connector: Connector<Configuration, State> = {
      * from the NDC specification.
      * @param configuration
      */
-    get_schema(configuration: Configuration): Promise<SchemaResponse>{
+    get_schema(configuration: Configuration): Promise<SchemaResponse> {
         const schemaResponse: SchemaResponse = {
             scalar_types: SCALAR_TYPES,
             functions: FUNCTIONS,
@@ -174,7 +174,7 @@ const connector: Connector<Configuration, State> = {
         };
         return Promise.resolve(schemaResponse);
     },
-  
+
     /**
      * Explain a query by creating an execution plan
      *
@@ -185,17 +185,13 @@ const connector: Connector<Configuration, State> = {
      * @param request
      */
     explain(
-      configuration: Configuration,
-      state: State,
-      request: QueryRequest
-    ): Promise<ExplainResponse>{
-        // TODO: Explain
-        const explainResponse: ExplainResponse = {
-            details: {}
-        };
-        return Promise.resolve(explainResponse);
+        _: Configuration,
+        state: State,
+        request: QueryRequest
+    ): Promise<ExplainResponse> {
+        return explainQuery(request, state.collectionNames, state.collectionFields);
     },
-  
+
     /**
      * Execute a mutation
      *
@@ -206,10 +202,10 @@ const connector: Connector<Configuration, State> = {
      * @param request
      */
     mutation(
-      configuration: Configuration,
-      state: State,
-      request: MutationRequest
-    ): Promise<MutationResponse>{
+        configuration: Configuration,
+        state: State,
+        request: MutationRequest
+    ): Promise<MutationResponse> {
         return new Promise((resolve, reject) => {
             const mutationResponse: MutationResponse = {
                 operation_results: []
@@ -228,12 +224,17 @@ const connector: Connector<Configuration, State> = {
      * @param request
      */
     query(
-      configuration: Configuration,
-      state: State,
-      request: QueryRequest
+        configuration: Configuration,
+        state: State,
+        request: QueryRequest
     ): Promise<QueryResponse> {
-        return postQuery(request, configuration, state);
+        return postQuery(
+            request,
+            state.collectionNames,
+            state.collectionFields,
+            configuration.qdrant_url,
+            configuration.qdrant_api_key);
     }
 };
-​
+
 start(connector);

@@ -46,7 +46,6 @@
     },
     "response": [
         {
-            "aggregates": null,
             "rows": [
                 {
                     "id": 1,

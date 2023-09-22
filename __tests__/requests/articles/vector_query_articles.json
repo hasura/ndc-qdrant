@@ -77,8 +77,7 @@
               "string": "Moscow",
               "bool": false
             }
-          ],
-          "aggregates": null
+          ]
         }
       ]
 }

@@ -10,6 +10,19 @@ type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
 type ScrollRequest = components["schemas"]["ScrollRequest"];
 
+export type QueryPlan = {
+    collectionName: string;
+    scrollQueries: ScrollRequest[];
+    searchQueries: SearchRequest[];
+    orderedFields: string[];
+    dropAggregateRows: string[];
+};
+
+export type PostQueryRequest = {
+    query: QueryRequest,
+
+}
+
 type VarSet = {
     [key: string]: any
 };
@@ -382,17 +395,9 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
     return aggResults;
 }
 
-/**
- * Processes the query request and returns the query response.
- * 
- * @async
- * @param {QueryRequest} query - The query request object.
- * @param {QdrantConfig} config - The Qdrant configuration object.
- * @returns {Promise<QueryResponse>} - The query response.
- */
-export async function postQuery(query: QueryRequest, config: Configuration, state: State): Promise<QueryResponse> {
+export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<QueryPlan>{
     // Assert that the collection is registered in the schema
-    if (!state.collections.includes(query.collection)) {
+    if (!collectionNames.includes(query.collection)) {
         throw new Error("Collection not found in schema!");
     }
 
@@ -463,7 +468,7 @@ export async function postQuery(query: QueryRequest, config: Configuration, stat
     for (const f in query.query.fields) {
         if (f === "vector") {
             includeVector = true;
-        }  else if (!state.collectionFields[individualCollectionName].includes(f)) {
+        }  else if (!collectionFields[individualCollectionName].includes(f)) {
             throw new Error("Requested field not in schema!");
         } else {
             includedPayloadFields.push(f);
@@ -475,6 +480,7 @@ export async function postQuery(query: QueryRequest, config: Configuration, stat
     // Here we collect all the queries we might want to make.
     let scrollQueries: ScrollRequest[] = [];
     let searchQueries: SearchRequest[] = [];
+
     let queryResponse: QueryCollection;
     if (query.variables === undefined || query.variables === null){
         // In the simplest case, we do not have any variables! So we will only have 1 request to make.
@@ -516,125 +522,126 @@ export async function postQuery(query: QueryRequest, config: Configuration, stat
         }
     };
 
-    if (scrollQueries.length > 0 && searchQueries.length > 0){
-        // All queries are either a "scroll" -> full scan or a "search" -> vector search
-        throw new Error("Mixed querying types are not supported.");
-    }
-
-    let aggKeys: string[] = [];
-    let aggRemoveRows: string[] = [];
+    let aggregateKeys: string[] = [];
+    let dropAggregateRows: string[] = [];
     if (Array.isArray(query.query.aggregates)) {
-        for (let [_, agg] of Object.entries(query.query.aggregates)) {
+        for (let agg of Object.values(query.query.aggregates)) {
             if (agg.type !== "star_count") {
-                aggKeys.push(agg.column);
+                aggregateKeys.push(agg.column);
                 if (!includedPayloadFields.includes(agg.column)) {
                     includedPayloadFields.push(agg.column);
-                    aggRemoveRows.push(agg.column);
+                    dropAggregateRows.push(agg.column);
                 }
             }
         }
-    }
+    };
+    return {
+        collectionName: individualCollectionName,
+        scrollQueries: scrollQueries,
+        searchQueries: searchQueries,
+        orderedFields: orderedFields,
+        dropAggregateRows: dropAggregateRows
+    };
+}
 
-    // This is where the response will go.
+export async function performQueries(
+    query: QueryRequest,
+    collectionName: string, 
+    scrollQueries: ScrollRequest[], 
+    searchQueries: SearchRequest[],
+    qdrantUrl: string,
+    qdrantApiKey: string | null,
+    orderedFields: string[],
+    dropAggregateRows: string[]): Promise<RowSet[]>{
     let rowSets: RowSet[] = [];
-
+    let results: {
+        id: string | number;
+        version?: number;
+        score?: number;
+        payload?: Record<string, unknown> | {
+            [key: string]: unknown;
+        } | null | undefined;
+        vector?: Record<string, unknown> | number[] | {
+            [key: string]: number[] | undefined;
+        } | null | undefined;
+    }[][];
     // Scroll Queries are a list of scroll requests
     // SearchQueries are a list of search requests and can be batched!
     if (scrollQueries.length > 0) {
         // Run the scrollQueries
         let promises = scrollQueries.map(scrollQuery => {
-            let client = getQdrantClient(config.qdrant_url, config.qdrant_api_key);
-            return client.scroll(individualCollectionName, scrollQuery);
+            let client = getQdrantClient(qdrantUrl, qdrantApiKey);
+            return client.scroll(collectionName, scrollQuery);
         });
-        let results = await Promise.all(promises);
-        for (let result of results){
-            let rowSet: RowSet = {};
-            let rows: RowFieldValue[] = [];
-            let aggResults: {[key: string]: any} = {};
-            let aggVars: {[key: string]: any} = {};
-            for (let p of result.points){
-                let row: RowFieldValue = {};
-                for (let rowField of orderedFields){
-                    if (rowField === "id"){
-                        row.id = p.id;
-                    } else if (rowField === "vector") {
-                        row.vector = p.vector as number[];
-                    } else {
-                        if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
-                            row[rowField] = null;
-                        } else if (p.payload !== undefined && p.payload !== null){
-                            row[rowField] = p.payload[rowField] as RowFieldValue;
-                        } else {
-                            throw new Error("Unkown Field not supported");
-                        }
-                    } 
-                }
-                rowAggregate(aggResults, aggVars, query, row, result.points.length);
-                for (let undef of aggRemoveRows){
-                    delete row[undef];
-                }
-                rows.push(row);
-            }
-            rowSet.rows = rows as {
-                [k: string]: RowFieldValue;
-            }[];
-            if (Object.keys(aggResults).length > 0){
-                rowSet.aggregates = aggResults;
-            } else {
-                // TODO: Might want to remove this actually instead of having it return null but will need to change in tests!!
-                rowSet.aggregates = null;
-            }
-            rowSets.push(rowSet);
-        }
+        results = (await Promise.all(promises)).map(r => r.points);
     } else if (searchQueries.length > 0){
         // Run the searchQueries as a batch!
-        let client = getQdrantClient(config.qdrant_url, config.qdrant_api_key);
-        let results = await client.searchBatch(individualCollectionName, {searches: searchQueries});
-
-        for (let result of results){
-            let rowSet: RowSet = {};
-            let rows: RowFieldValue[] = [];
-            let aggResults: {[key: string]: any} = {};
-            let aggVars: {[key: string]: any} = {};
-            for (let p of result){
-                let row: RowFieldValue = {};
-                for (let rowField of orderedFields){
-                    if (rowField === "id"){
-                        row.id = p.id;
-                    } else if (rowField === "vector") {
-                        row.vector = p.vector as number[];
-                    } else if (rowField === "score") {
-                        row.score = p.score;
-                    } else if (rowField === "version"){
-                        row.version = p.version;
-                    } else {
-                        if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
-                            row[rowField] = null;
-                        } else if (p.payload !== undefined && p.payload !== null){
-                            row[rowField] = p.payload[rowField] as RowFieldValue;
-                        } else {
-                            throw new Error("Unknown Field Not supported");
-                        }
-                    } 
-                }
-                rowAggregate(aggResults, aggVars, query, row, result.length);
-                for (let undef of aggRemoveRows){
-                    delete row[undef]
-                }
-                rows.push(row);
-            }
-            rowSet.rows = rows as {
-                [k: string]: RowFieldValue;
-            }[];
-            if (Object.keys(aggResults).length > 0){
-                rowSet.aggregates = aggResults;
-            } else {
-                rowSet.aggregates = null;
-            }
-            rowSets.push(rowSet);
-        }
+        let client = getQdrantClient(qdrantUrl, qdrantApiKey);
+        results = await client.searchBatch(collectionName, {searches: searchQueries});
     } else {
         throw new Error("Unknown Query Type");
     }
+    for (let result of results){
+        let rowSet: RowSet = {};
+        let rows: RowFieldValue[] = [];
+        let aggResults: {[key: string]: any} = {};
+        let aggVars: {[key: string]: any} = {};
+        for (let p of result){
+            let row: RowFieldValue = {};
+            for (let rowField of orderedFields){
+                if (rowField === "id"){
+                    row.id = p.id;
+                } else if (rowField === "vector") {
+                    row.vector = p.vector as number[];
+                } else if (rowField === "score" && "score" in p) {
+                    row.score = p.score;
+                } else if (rowField === "version" && "version" in p){
+                    row.version = p.version;
+                } else {
+                    if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
+                        row[rowField] = null;
+                    } else if (p.payload !== undefined && p.payload !== null){
+                        row[rowField] = p.payload[rowField] as RowFieldValue;
+                    } else {
+                        throw new Error("Unknown Field Not supported");
+                    }
+                } 
+            }
+            rowAggregate(aggResults, aggVars, query, row, result.length);
+            for (let undef of dropAggregateRows){
+                delete row[undef]
+            }
+            rows.push(row);
+        }
+        rowSet.rows = rows as {
+            [k: string]: RowFieldValue;
+        }[];
+        if (Object.keys(aggResults).length > 0){
+            rowSet.aggregates = aggResults;
+        }
+        rowSets.push(rowSet);
+    }
     return rowSets;
+}
+
+/**
+ * Processes the query request and returns the query response.
+ * 
+ * @async
+ * @param {QueryRequest} query - The query request object.
+ * @param {QdrantConfig} config - The Qdrant configuration object.
+ * @returns {Promise<QueryResponse>} - The query response.
+ */
+export async function postQuery(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, qdrantUrl: string, qdrantApiKey: string | null): Promise<QueryResponse> {
+    let queryPlan = await planQueries(query, collectionNames, collectionFields);
+    return await performQueries(
+        query,
+        queryPlan.collectionName,
+        queryPlan.scrollQueries,
+        queryPlan.searchQueries,
+        qdrantUrl,
+        qdrantApiKey,
+        queryPlan.orderedFields,
+        queryPlan.dropAggregateRows
+    );
 }

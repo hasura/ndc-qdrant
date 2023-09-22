@@ -35,7 +35,6 @@
     },
     "response": [
         {
-          "aggregates": null,
           "rows": [
             {
               "id": 3,
