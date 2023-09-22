@@ -3,7 +3,6 @@ import { QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/schemas/Q
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
-import { Configuration, State } from "..";
 // import axios from 'axios';
 
 type QueryFilter = components["schemas"]["Filter"];
@@ -21,7 +20,7 @@ export type QueryPlan = {
 export type PostQueryRequest = {
     query: QueryRequest,
 
-}
+};
 
 type VarSet = {
     [key: string]: any
@@ -36,13 +35,20 @@ type QueryCollection = {
 const isFloat = (v: any) => !isNaN(v) && Math.floor(v) !== Math.ceil(v);
 
 /**
- * Recursively builds a query filter based on the expression and the variable set.
- * Throws an error for unsupported operation types.
+ * Constructs a filter based on the provided expression, potentially using recursion for nested expressions.
  * 
- * @param {Expression} expression - The expression object to be parsed.
- * @param {QueryFilter} filter - The query filter to be built.
- * @param {VarSet | null} varSet - The set of variables to be used in the query filter.
- * @returns {QueryFilter} - The constructed query filter.
+ * This function constructs a `QueryFilter` for a given `Expression`. The filter creation process 
+ * depends on the type of the expression and its components. The function handles various expression types,
+ * including unary comparison, binary comparison, binary array comparison, logical operators (AND, OR, NOT), 
+ * and others.
+ * 
+ * @param {Expression} expression - The expression based on which the filter needs to be constructed.
+ * @param {QueryFilter} filter - The filter object to which the conditions should be added.
+ * @param {VarSet | null} varSet - Variable set that may be used to resolve variable-based arguments in the expression.
+ * @returns {QueryFilter} - The constructed filter based on the provided expression.
+ * @throws {Error} Throws an error if the provided expression type or its components are not supported or are in an incorrect format.
+ * @example
+ *   const myFilter = recursiveBuildFilter(myExpression, {}, myVarSet);
  */
 function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSet: VarSet | null): QueryFilter {
     switch (expression.type) {
@@ -250,19 +256,27 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
             throw new Error("Unknown Expression Type!");
     }
     return filter;
-}
+};
 
 /**
- * Queries the database based on various parameters and returns the results as a RowSet.
+ * Constructs the appropriate search or scroll request based on the provided query request and other parameters.
  * 
- * @param {QueryRequest} query - The query request object.
- * @param {boolean} vectorSearch - A flag indicating whether to perform a vector search.
- * @param {string[]} includedPayloadFields - The payload fields to include in the response.
- * @param {boolean} includeVector - A flag indicating whether to include vectors in the response.
- * @param {VarSet | null} varSet - The set of variables to be used in the query.
- * @returns {Promise<RowSet>} - The results of the query as a RowSet.
+ * This function, based on whether a vector search is required or not, creates either a vector search request or 
+ * a scroll request. The function uses helper functions like `recursiveBuildFilter` to create complex query 
+ * filters if needed.
+ * 
+ * @param {QueryRequest} query - The main query request containing filtering, arguments, and other details.
+ * @param {boolean} vectorSearch - Indicates if a vector-based search needs to be performed.
+ * @param {string[]} includedPayloadFields - List of fields from the payload to be included in the response.
+ * @param {boolean} includeVector - Indicates if the vector itself should be included in the response.
+ * @param {VarSet | null} varSet - Variable set that may be used to resolve variable-based arguments in the query.
+ * @returns {Promise<QueryCollection>} - Returns a promise that resolves to a query collection containing either a search request or a scroll request.
+ * @throws {Error} Throws an error if the required arguments or request types are not provided or are in an incorrect format.
+ * @example
+ *   const queryCol = await collectQueries(myQuery, true, ['field1', 'field2'], true, myVarSet);
+ * 
  */
-async function collectQueries(query: QueryRequest,
+async function collectQuery(query: QueryRequest,
     vectorSearch: boolean,
     includedPayloadFields: string[],
     includeVector: boolean,
@@ -315,17 +329,26 @@ async function collectQueries(query: QueryRequest,
         scrollRequest: scrollRequest
     };
     return queryCollection;
-}
+};
 
 /**
- * Mutates the aggResults and aggVars to add-on aggregation in the required O(N*P) where N is the number of rows, and P is the number of aggregates to take
+ * Performs aggregation operations on a single row based on the specified aggregate criteria in the query.
  * 
- * @param aggResults The current aggregate results
- * @param aggVars Any variables needed accross the aggregates
- * @param query The query object
- * @param row The row to use to mutate the aggregation object
- * @param numRows The number of rows in total. (Useful for avg and other aggregates)
- * @returns - None, mutates the aggResults in place
+ * The function supports various aggregation operations such as sum, average, count, and distinct count. 
+ * It modifies the passed `aggResults` object in place to accumulate the aggregation results over multiple rows.
+ * Additionally, the function uses the `aggVars` object as a storage for intermediate aggregate values 
+ * (e.g., for distinct count operation).
+ * 
+ * @param {{[key: string]: any}} aggResults - Accumulated aggregate results. This object is updated in place.
+ * @param {{[key: string]: any}} aggVars - Intermediate storage for certain aggregate operations, e.g., storing unique values for the distinct count.
+ * @param {QueryRequest} query - The main query request that contains the aggregate criteria.
+ * @param {RowFieldValue} row - The single row of data on which the aggregate operations need to be performed.
+ * @param {number} numRows - Total number of rows over which the aggregates are computed. Used in certain operations like average.
+ * @returns {{[key: string]: any}} - Returns the updated `aggResults` object.
+ * @throws {Error} Various errors can be thrown depending on the unsupported aggregate operations or data types.
+ * @example
+ *   const aggResult = rowAggregate(accumulatedAggs, aggVariables, myQuery, singleRow, totalRows);
+ * 
  */
 function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]: any},  query: QueryRequest, row: RowFieldValue, numRows: number): {[key: string]: any} {
     if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
@@ -393,8 +416,24 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
         }
     }
     return aggResults;
-}
+};
 
+/**
+ * Plans and prepares the set of queries that need to be executed based on the provided input query request.
+ * 
+ * This function checks various conditions in the query such as the collection name, relationships, fields, 
+ * ordering, arguments, etc., and creates a plan in the form of scroll or search queries. This planning is
+ * essential to understand how the actual queries will be run against the qdrant service.
+ * 
+ * @async
+ * @param {QueryRequest} query - The main query request that specifies what data needs to be fetched.
+ * @param {string[]} collectionNames - List of available collections in the qdrant service.
+ * @param {{[key: string]: string[]}} collectionFields - Mapping of each collection to its fields, indicating which fields are available in each collection.
+ * @returns {Promise<QueryPlan>} - A promise that resolves to a query plan. The plan indicates which type of queries need to be run (scroll or search), the fields that need to be retrieved, and any other specific details.
+ * @throws {Error} Various errors can be thrown if the provided query does not match the expected criteria such as if the collection is not found, if querying with relationships is attempted, if fields are null or if ordering is specified.
+ * @example
+ *   const myQueryPlan = await planQueries(myQuery, availableCollections, availableFields);
+ */
 export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<QueryPlan>{
     // Assert that the collection is registered in the schema
     if (!collectionNames.includes(query.collection)) {
@@ -484,7 +523,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     let queryResponse: QueryCollection;
     if (query.variables === undefined || query.variables === null){
         // In the simplest case, we do not have any variables! So we will only have 1 request to make.
-        queryResponse = await collectQueries(
+        queryResponse = await collectQuery(
             query,
             vectorSearch,
             includedPayloadFields,
@@ -502,7 +541,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         // When there are variables, we will build multiple queries, which we will either run concurrently, or as a batch if batching is supported. It's only possible to either perform ALL searches, or ALL scrolls.
         let promises = query.variables.map(varSet => {
         let vSet: VarSet = varSet;
-            return collectQueries(
+            return collectQuery(
                 query,
                 vectorSearch,
                 includedPayloadFields,
@@ -542,8 +581,30 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         orderedFields: orderedFields,
         dropAggregateRows: dropAggregateRows
     };
-}
+};
 
+/**
+ * Executes a set of queries against a qdrant service and retrieves the results.
+ * 
+ * This function can handle both scroll and search queries. Scroll queries fetch a particular set of points, 
+ * while search queries retrieve points based on certain search criteria. Both types of queries are performed against
+ * a specified collection in the qdrant service.
+ * 
+ * @async
+ * @param {QueryRequest} query - The original query request.
+ * @param {string} collectionName - Name of the collection in qdrant against which the queries will be executed.
+ * @param {ScrollRequest[]} scrollQueries - An array of scroll requests. Each request specifies criteria for retrieving a set of points from the collection.
+ * @param {SearchRequest[]} searchQueries - An array of search requests. Each request specifies criteria for searching points within the collection.
+ * @param {string} qdrantUrl - The URL endpoint for the qdrant service.
+ * @param {string | null} qdrantApiKey - The API key for the qdrant service. Can be null if not required.
+ * @param {string[]} orderedFields - An ordered list of fields that are expected in the query results. This helps in structuring the returned rows.
+ * @param {string[]} dropAggregateRows - Fields that need to be dropped from the row but are required to calculate the aggregate
+ * @returns {Promise<RowSet[]>} - A promise that resolves to an array of row sets. Each row set contains 
+ *                                the rows of data retrieved from the query and any associated aggregate results.
+ * @throws {Error} If an unknown type of query is provided or if an unsupported field is encountered in the results.
+ * @example
+ *   const rowSets = await performQueries(query, "myCollection", [], searchRequests, "https://qdrant.url", "api_key", ["id", "vector"], []);
+ */
 export async function performQueries(
     query: QueryRequest,
     collectionName: string, 
@@ -599,6 +660,7 @@ export async function performQueries(
                     row.version = p.version;
                 } else {
                     if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
+                        // These rows are explicitly nullable, and in this case, are null! I.e. User requested the field, and in this row it's null
                         row[rowField] = null;
                     } else if (p.payload !== undefined && p.payload !== null){
                         row[rowField] = p.payload[rowField] as RowFieldValue;
@@ -622,15 +684,21 @@ export async function performQueries(
         rowSets.push(rowSet);
     }
     return rowSets;
-}
+};
 
 /**
- * Processes the query request and returns the query response.
+ * Sends a query to the specified qdrant endpoint and retrieves the corresponding response.
+ * 
+ * This function first plans the queries based on the provided query request and collection parameters.
+ * It then performs the queries against the qdrant endpoint using the planned data.
  * 
  * @async
- * @param {QueryRequest} query - The query request object.
- * @param {QdrantConfig} config - The Qdrant configuration object.
- * @returns {Promise<QueryResponse>} - The query response.
+ * @param {QueryRequest} query - The query request object to process.
+ * @param {string[]} collectionNames - List of collection names available.
+ * @param {{[key: string]: string[]}} collectionFields - Dictionary mapping collection names to their corresponding fields.
+ * @param {string} qdrantUrl - The URL endpoint for the qdrant service.
+ * @param {string | null} qdrantApiKey - The API key for the qdrant service (can be null).
+ * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
 export async function postQuery(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, qdrantUrl: string, qdrantApiKey: string | null): Promise<QueryResponse> {
     let queryPlan = await planQueries(query, collectionNames, collectionFields);
@@ -644,4 +712,4 @@ export async function postQuery(query: QueryRequest, collectionNames: string[], 
         queryPlan.orderedFields,
         queryPlan.dropAggregateRows
     );
-}
+};

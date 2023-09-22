@@ -12,6 +12,8 @@ import { postQuery } from "./handlers/query";
 import { getQdrantClient } from "./qdrant";
 import { explainQuery } from "./handlers/explain";
 
+
+// TODO: Update config -> Store more here?
 export interface Configuration {
     read_regions: string[];
     write_regions: string[];
@@ -153,7 +155,7 @@ const connector: Connector<Configuration, State> = {
      * from the NDC specification.
      * @param configuration
      */
-    get_capabilities(_: Configuration): Promise<CapabilitiesResponse> {
+    get_capabilities(configuration: Configuration): Promise<CapabilitiesResponse> {
         return Promise.resolve(CAPABILITIES_RESPONSE);
     },
 
@@ -206,12 +208,7 @@ const connector: Connector<Configuration, State> = {
         state: State,
         request: MutationRequest
     ): Promise<MutationResponse> {
-        return new Promise((resolve, reject) => {
-            const mutationResponse: MutationResponse = {
-                operation_results: []
-            };
-            resolve(mutationResponse);
-        })
+        throw new Error("Mutation endpoint not implemented!");
     },
 
     /**
