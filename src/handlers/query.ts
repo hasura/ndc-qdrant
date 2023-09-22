@@ -1,11 +1,10 @@
-import { QueryRequest, Expression } from "../schemas/QueryRequest";
-import { QueryResponse, RowSet, Row, RowFieldValue } from "../schemas/QueryResponse";
-import { QdrantConfig } from "../config";
+import { QueryRequest, Expression } from "ts-connector-sdk/schemas/QueryRequest";
+import { QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/schemas/QueryResponse";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
-import axios from 'axios';
-
+import { Configuration, State } from "..";
+// import axios from 'axios';
 
 type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
@@ -46,7 +45,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     ]
                     break;
                 default:
-                    throw new Error("Not implemented");
+                    throw new Error("Unknown Unary Comparison Operator");
             }
             break;
         case "binary_comparison_operator":
@@ -64,7 +63,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     }
                     break;
                 default:
-                    throw new Error("Not implemented");
+                    throw new Error("Unknown Binary Comparison Operator");
             }
             switch (operator) {
                 case "equal":
@@ -93,7 +92,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ];
                     } else {
-                        throw new Error("Not implemented");
+                        throw new Error(`Cannot perform equality comparison on ${expression.column.name}`);
                     }
                     break;
                 case "like":
@@ -107,12 +106,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new Error("Not Implemented");
+                        throw new Error(`Like is not implemented for ${typeof value}`);
                     }
                     break;
                 case "gt":
                     if (expression.column.name === "id") {
-                        throw Error("Not Implemented");
+                        throw Error("Cannot perform > operation on column ID");
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -124,12 +123,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new Error("Not Implemented");
+                        throw new Error("> operation only supported by number types");
                     }
                     break;
                 case "lt":
                     if (expression.column.name === "id") {
-                        throw Error("Not Implemented");
+                        throw Error("Cannot perform < operation on column ID");
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -141,12 +140,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new Error("Not Implemented");
+                        throw new Error("< operation only supported by number types");
                     }
                     break;
                 case "gte":
                     if (expression.column.name === "id") {
-                        throw Error("Not Implemented");
+                        throw Error("Cannot perform >= operation on columb ID");
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -158,12 +157,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new Error("Not Implemented");
+                        throw new Error(">= operation only supported by number types");
                     }
                     break;
                 case "lte":
                     if (expression.column.name === "id") {
-                        throw Error("Not Implemented");
+                        throw Error("Cannot perform <= operation on column ID");
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -175,7 +174,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new Error("Not Implemented");
+                        throw new Error("<= operation only supported by number types");
                     }
                     break;
                 default:
@@ -185,7 +184,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
         case "binary_array_comparison_operator":
             if (expression.operator === "in") {
                 if (expression.values.length === 0) {
-                    throw new Error("In requires a lsit");
+                    throw new Error("In requires an array of items");
                 }
                 if (expression.column.name === "id") {
                     filter.must = [
@@ -206,11 +205,11 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             break;
                         case "variable":
                             // Is this not in spec?
-                            throw new Error("Not implemented");
+                            throw new Error("In not supported by variables");
                         case "column":
-                            throw new Error("Not implemented");
+                            throw new Error("In not supported on columns");
                         default:
-                            throw new Error("Not implemented");
+                            throw new Error("In not supported on unknown value type");
                     }
                 }
                 filter.must = [
@@ -233,9 +232,9 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
             filter.must_not = [recursiveBuildFilter(expression.expression, {}, varSet)];
             break;
         case "exists":
-            throw new Error("Exists not implemented yet!");
+            throw new Error("Expression type Exists not implemented!");
         default:
-            throw new Error("Not implemented");
+            throw new Error("Unknown Expression Type!");
     }
     return filter;
 }
@@ -270,7 +269,7 @@ async function collectQueries(query: QueryRequest,
         } else if (query.arguments.vector.type === "variable" && varSet !== null){
             v = varSet[query.arguments.vector.name] as number[];
         } else {
-            throw new Error("Not implemented");
+            throw new Error("Failed to load vector, which must be a flat array of flaots");
         }
         searchRequest = {
             vector: v,
@@ -315,7 +314,7 @@ async function collectQueries(query: QueryRequest,
  * @param numRows The number of rows in total. (Useful for avg and other aggregates)
  * @returns - None, mutates the aggResults in place
  */
-function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]: any},  query: QueryRequest, row: Row, numRows: number): {[key: string]: any} {
+function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]: any},  query: QueryRequest, row: RowFieldValue, numRows: number): {[key: string]: any} {
     if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
         for (let [key, agg] of Object.entries(query.query.aggregates)) {
             switch (agg.type) {
@@ -335,20 +334,20 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
                                 aggResults[key] += row[agg.column];
                                 break;
                             } else {
-                                throw new Error("Not implemented");
+                                throw new Error("Sum operation not supported on this type");
                             }
                         case "avg":
                             if (typeof row[agg.column] === "number") {
                                 if (aggResults[key] === undefined) {
                                     aggResults[key] = 0;
                                 }
-                                aggResults[key] += (row[agg.column] as number / numRows) as number;
+                                aggResults[key] += (row[agg.column] as unknown as number / numRows) as number;
                                 break;
                             } else {
-                                throw new Error("Not implemented");
+                                throw new Error("Average operation not supported on this type");
                             }
                         default:
-                            throw new Error("Not implemented");
+                            throw new Error("Unknown aggregate operation not supported!");
                     }
                     break;
                 case "column_count":
@@ -376,7 +375,7 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
                     aggResults[key] += 1;
                     break;
                 default:
-                    throw new Error("Not implemented");
+                    throw new Error("Unkown aggregate type not supported.");
             }
         }
     }
@@ -391,9 +390,9 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
  * @param {QdrantConfig} config - The Qdrant configuration object.
  * @returns {Promise<QueryResponse>} - The query response.
  */
-export async function postQuery(query: QueryRequest, config: QdrantConfig): Promise<QueryResponse> {
+export async function postQuery(query: QueryRequest, config: Configuration, state: State): Promise<QueryResponse> {
     // Assert that the collection is registered in the schema
-    if (!config.collections.includes(query.collection)) {
+    if (!state.collections.includes(query.collection)) {
         throw new Error("Collection not found in schema!");
     }
 
@@ -432,26 +431,27 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
                 textParamCounter += 1;
                 break;
             default:
-                throw new Error("Argument not implemented");
+                throw new Error(`Argument ${arg} not implemented`);
         }
     }
 
     // Adding the ability to call an external API to get embeddings from a string of text.
     if (textParamCounter === 3) {
+        throw new Error("Currently not implemented");
         // What if we smashed vectors together. To combine multiple sensory vectors, i.e. images, text, and audio... vector into a bigger vector by combining the vector of an image and some text? 🤔💭
-        let search: string = query.arguments.search.value as string;
-        let searchUrl: string = query.arguments.searchUrl.value as string;
-        let searchModel: string = query.arguments.searchModel.value as string;
-        const response = await axios.post(searchUrl, {
-            search: search,
-            model: searchModel
-        });
-        let responseData: number[] = response.data;
-        query.arguments.vector = {
-            type: "literal",
-            value: responseData
-        };
-        vectorSearch = true;
+        // let search: string = query.arguments.search.value as string;
+        // let searchUrl: string = query.arguments.searchUrl.value as string;
+        // let searchModel: string = query.arguments.searchModel.value as string;
+        // const response = await axios.post(searchUrl, {
+        //     search: search,
+        //     model: searchModel
+        // });
+        // let responseData: number[] = response.data;
+        // query.arguments.vector = {
+        //     type: "literal",
+        //     value: responseData
+        // };
+        // vectorSearch = true;
     } else if (textParamCounter > 0) {
         throw new Error("You must provide a search, searchModel, and searchUrl to perform a text-search");
     }
@@ -463,7 +463,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     for (const f in query.query.fields) {
         if (f === "vector") {
             includeVector = true;
-        }  else if (!config.collectionFields[individualCollectionName].includes(f)) {
+        }  else if (!state.collectionFields[individualCollectionName].includes(f)) {
             throw new Error("Requested field not in schema!");
         } else {
             includedPayloadFields.push(f);
@@ -490,7 +490,7 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         } else if (queryResponse.searchRequest !== null){
             searchQueries.push(queryResponse.searchRequest);
         } else {
-            throw new Error("Not Implemented");
+            throw new Error("Unknown Query type not supported");
         }
     } else {
         // When there are variables, we will build multiple queries, which we will either run concurrently, or as a batch if batching is supported. It's only possible to either perform ALL searches, or ALL scrolls.
@@ -511,14 +511,14 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
             } else if (result.searchRequest !== null){
                 searchQueries.push(result.searchRequest);
             } else {
-                throw new Error("Not implemented");
+                throw new Error("Unknown Query Type not supported");
             }
         }
     };
 
     if (scrollQueries.length > 0 && searchQueries.length > 0){
         // All queries are either a "scroll" -> full scan or a "search" -> vector search
-        throw new Error("Not implemented");
+        throw new Error("Mixed querying types are not supported.");
     }
 
     let aggKeys: string[] = [];
@@ -543,17 +543,17 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
     if (scrollQueries.length > 0) {
         // Run the scrollQueries
         let promises = scrollQueries.map(scrollQuery => {
-            let client = getQdrantClient(config.clientConfig);
+            let client = getQdrantClient(config.qdrant_url, config.qdrant_api_key);
             return client.scroll(individualCollectionName, scrollQuery);
         });
         let results = await Promise.all(promises);
         for (let result of results){
             let rowSet: RowSet = {};
-            let rows: Row[] = [];
+            let rows: RowFieldValue[] = [];
             let aggResults: {[key: string]: any} = {};
             let aggVars: {[key: string]: any} = {};
             for (let p of result.points){
-                let row: Row = {};
+                let row: RowFieldValue = {};
                 for (let rowField of orderedFields){
                     if (rowField === "id"){
                         row.id = p.id;
@@ -565,17 +565,19 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
                         } else if (p.payload !== undefined && p.payload !== null){
                             row[rowField] = p.payload[rowField] as RowFieldValue;
                         } else {
-                            throw new Error("Not implemented");
+                            throw new Error("Unkown Field not supported");
                         }
                     } 
                 }
                 rowAggregate(aggResults, aggVars, query, row, result.points.length);
                 for (let undef of aggRemoveRows){
-                    row[undef] = undefined;
+                    delete row[undef];
                 }
                 rows.push(row);
             }
-            rowSet.rows = rows;
+            rowSet.rows = rows as {
+                [k: string]: RowFieldValue;
+            }[];
             if (Object.keys(aggResults).length > 0){
                 rowSet.aggregates = aggResults;
             } else {
@@ -586,16 +588,16 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
         }
     } else if (searchQueries.length > 0){
         // Run the searchQueries as a batch!
-        let client = getQdrantClient(config.clientConfig);
+        let client = getQdrantClient(config.qdrant_url, config.qdrant_api_key);
         let results = await client.searchBatch(individualCollectionName, {searches: searchQueries});
 
         for (let result of results){
             let rowSet: RowSet = {};
-            let rows: Row[] = [];
+            let rows: RowFieldValue[] = [];
             let aggResults: {[key: string]: any} = {};
             let aggVars: {[key: string]: any} = {};
             for (let p of result){
-                let row: Row = {};
+                let row: RowFieldValue = {};
                 for (let rowField of orderedFields){
                     if (rowField === "id"){
                         row.id = p.id;
@@ -611,30 +613,28 @@ export async function postQuery(query: QueryRequest, config: QdrantConfig): Prom
                         } else if (p.payload !== undefined && p.payload !== null){
                             row[rowField] = p.payload[rowField] as RowFieldValue;
                         } else {
-                            throw new Error("Not implemented");
+                            throw new Error("Unknown Field Not supported");
                         }
                     } 
                 }
                 rowAggregate(aggResults, aggVars, query, row, result.length);
                 for (let undef of aggRemoveRows){
-                    row[undef] = undefined;
+                    delete row[undef]
                 }
                 rows.push(row);
             }
-            rowSet.rows = rows;
+            rowSet.rows = rows as {
+                [k: string]: RowFieldValue;
+            }[];
             if (Object.keys(aggResults).length > 0){
                 rowSet.aggregates = aggResults;
             } else {
-                // TODO: Might want to remove this actually instead of having it return null but will need to change in tests!!
                 rowSet.aggregates = null;
             }
             rowSets.push(rowSet);
         }
     } else {
-        throw new Error("Not implemented");
-    }
-    if (scrollQueries.length === 0 && searchQueries.length === 0){
-        throw new Error("Not implemented!");
+        throw new Error("Unknown Query Type");
     }
     return rowSets;
 }

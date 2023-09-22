@@ -1,0 +1,84 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "vector": {
+                    "type": "column",
+                    "column": "vector"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                },
+                "float": {
+                    "type": "column",
+                    "column": "float"
+                }
+            },
+            "where": {
+                "type": "binary_comparison_operator",
+                "column": {
+                    "type": "column",
+                    "name": "float",
+                    "path": []
+                },
+                "operator": {
+                    "type": "equal"
+                },
+                "value": {
+                    "type": "scalar",
+                    "value": 1.5
+                }
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+          "aggregates": null,
+          "rows": [
+            {
+              "id": 1,
+              "vector": [
+                0.04082755,
+                0.4980961,
+                0.62057877,
+                0.60424775
+              ],
+              "string": "Berlin",
+              "float": 1.5
+            },
+            {
+              "id": 2,
+              "vector": [
+                0.29041705,
+                0.44369268,
+                0.37915558,
+                0.75831115
+              ],
+              "string": "Moscow",
+              "float": 1.5
+            },
+            {
+              "id": 6,
+              "vector": [
+                0.04082755,
+                0.4980961,
+                0.62057877,
+                0.60424775
+              ],
+              "string": "Berlin",
+              "float": 1.5
+            }
+          ]
+        }
+      ]
+}

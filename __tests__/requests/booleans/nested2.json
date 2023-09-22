@@ -1,0 +1,120 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "booleans",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                }
+            },
+            "where": {
+                "type": "and",
+                "expressions": [
+                    {
+                        "type": "or",
+                        "expressions": [
+                            {
+                                "type": "and",
+                                "expressions": [
+                                    {
+                                        "type": "binary_comparison_operator",
+                                        "column": {
+                                            "type": "column",
+                                            "name": "A",
+                                            "path": []
+                                        },
+                                        "operator": {
+                                            "type": "equal"
+                                        },
+                                        "value": {
+                                            "type": "scalar",
+                                            "value": true
+                                        }
+                                    },
+                                    {
+                                        "type": "not",
+                                        "expression": {
+                                            "type": "binary_comparison_operator",
+                                            "column": {
+                                                "type": "column",
+                                                "name": "C",
+                                                "path": []
+                                            },
+                                            "operator": {
+                                                "type": "equal"
+                                            },
+                                            "value": {
+                                                "type": "scalar",
+                                                "value": true
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "binary_comparison_operator",
+                                "column": {
+                                    "type": "column",
+                                    "name": "B",
+                                    "path": []
+                                },
+                                "operator": {
+                                    "type": "equal"
+                                },
+                                "value": {
+                                    "type": "scalar",
+                                    "value": true
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "type": "not",
+                        "expression": {
+                            "type": "binary_comparison_operator",
+                            "column": {
+                                "type": "column",
+                                "name": "D",
+                                "path": []
+                            },
+                            "operator": {
+                                "type": "equal"
+                            },
+                            "value": {
+                                "type": "scalar",
+                                "value": false
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 0
+                },
+                {
+                    "id": 2
+                },
+                {
+                    "id": 6
+                },
+                {
+                    "id": 8
+                },
+                {
+                    "id": 10
+                }
+            ],
+            "aggregates": null
+        }
+    ]
+}
