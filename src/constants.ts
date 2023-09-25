@@ -1,7 +1,5 @@
 import { CapabilitiesResponse } from "ts-connector-sdk/schemas/CapabilitiesResponse";
 import { ScalarType } from "ts-connector-sdk/schemas/SchemaResponse";
-import { FunctionInfo } from "ts-connector-sdk/schemas/SchemaResponse";
-import { ProcedureInfo } from "ts-connector-sdk/schemas/SchemaResponse";
 
 export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
     "versions": "^0.1.0",
@@ -91,6 +89,4 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
     }
     // Geo Type? https://qdrant.tech/documentation/concepts/payload/
 };
-export const FUNCTIONS: FunctionInfo[] = [];
-export const PROCEDURES: ProcedureInfo[] = [];
 export const MAX_32_INT: number = 2147483647;

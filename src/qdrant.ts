@@ -1,7 +1,7 @@
 import {QdrantClient} from "@qdrant/js-client-rest";
 
-export function getQdrantClient(url: string, apiKey: string | null): QdrantClient {
-    if (apiKey === null){
+export function getQdrantClient(url: string, apiKey?: string): QdrantClient {
+    if (!apiKey){
         return new QdrantClient(
             {
                 url: url

@@ -5,12 +5,12 @@ import { promisify } from 'util';
 const writeFile = promisify(fs.writeFile);
 
 const DEFAULT_URL = "http://localhost:6333";
-const DEFAULT_OUTPUT_FILENAME = "type_stubs.json";
+const DEFAULT_OUTPUT_FILENAME = "configuration.json";
 
 const args = process.argv.slice(2);
 let clientUrl = DEFAULT_URL;
-let apiKey = null;
 let outputFileName = DEFAULT_OUTPUT_FILENAME;
+let apiKey: string | undefined = undefined;
 
 for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -32,7 +32,7 @@ for (let i = 0; i < args.length; i++) {
     }
 }
 
-let client = getQdrantClient(clientUrl, apiKey);
+let client = getQdrantClient(clientUrl);
 
 interface FieldDefinition {
     description: string | null;
@@ -158,41 +158,17 @@ async function main() {
         }
     }
 
-    const collectionsResult = [];
-    for (const cn of collectionNames) {
-        collectionsResult.push({
-            name: `${cn}s`,
-            description: null,
-            arguments: {
-                vector: {
-                    type: {
-                        type: "nullable",
-                        underlying_type: {
-                            type: "array",
-                            element_type: {
-                                type: "named",
-                                name: "Float"
-                            }
-                        }
-                    }
-                }
-            },
-            type: cn,
-            deletable: false,
-            uniqueness_constraints: {
-                [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
-                    unique_columns: ["id"]
-                }
-            },
-            foreign_keys: {}
-        });
-    }
-
     console.log(`Writing object_types and collections to ${outputFileName}`);
-    await writeFile(outputFileName, JSON.stringify({
+    let res: any = {
+        qdrant_url: clientUrl,
         object_types: objectTypes,
-        collections: collectionsResult
-    }));
+        functions: [],
+        procedures: []
+    };
+    if (apiKey){
+        res["qdrant_api_key"] = apiKey;
+    }
+    await writeFile(outputFileName, JSON.stringify(res));
 }
 
 main();

@@ -3,24 +3,21 @@ import { QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/schemas/Q
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
-// import axios from 'axios';
 
 type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
 type ScrollRequest = components["schemas"]["ScrollRequest"];
+type RecommendRequest = components["schemas"]["RecommendRequest"];
 
 export type QueryPlan = {
     collectionName: string;
     scrollQueries: ScrollRequest[];
     searchQueries: SearchRequest[];
+    recommendQueries: RecommendRequest[];
     orderedFields: string[];
     dropAggregateRows: string[];
 };
 
-export type PostQueryRequest = {
-    query: QueryRequest,
-
-};
 
 type VarSet = {
     [key: string]: any
@@ -29,6 +26,7 @@ type VarSet = {
 type QueryCollection = {
     searchRequest: SearchRequest | null;
     scrollRequest: ScrollRequest | null;
+    recomendRequest: RecommendRequest | null;
 };
 
 // Helper function to determine if a value is a float
@@ -278,6 +276,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
  */
 async function collectQuery(query: QueryRequest,
     vectorSearch: boolean,
+    recommendSearch: boolean,
     includedPayloadFields: string[],
     includeVector: boolean,
     varSet: VarSet | null): Promise<QueryCollection> {
@@ -289,6 +288,7 @@ async function collectQuery(query: QueryRequest,
 
     let searchRequest: SearchRequest | null = null;
     let scrollRequest: ScrollRequest | null = null;
+    let recommendRequest: RecommendRequest | null = null;
     if (vectorSearch) {
         let v: number[] = [];
         if (query.arguments.vector.type === "literal"){
@@ -300,6 +300,37 @@ async function collectQuery(query: QueryRequest,
         }
         searchRequest = {
             vector: v,
+            with_vector: includeVector,
+            with_payload: {
+                include: includedPayloadFields
+            },
+            filter: filter,
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+        }
+    } else if (recommendSearch) {
+        let positive: number[] = [];
+        let negative: number[] = [];
+        if (query.arguments.positive.type === "literal"){
+            positive = query.arguments.positive.value as number[];
+        } else if (query.arguments.positive.type === "variable" && varSet !== null){
+            positive = varSet[query.arguments.positive.name] as number[];
+        } else {
+            throw new Error("Unknown Positive type provided");
+        }
+        if (query.arguments.negative !== undefined && query.arguments.negative !== null){
+            if (query.arguments.negative.type === "literal"){
+                negative = query.arguments.negative.value as number[];
+            } else if (query.arguments.negative.type === "variable" && varSet !== null){
+                negative = varSet[query.arguments.negative.name] as number[];
+            }
+        }
+        if (positive.length === 0){
+            throw new Error("Cannot get recommendation without providing positive context.");
+        }
+        recommendRequest = {
+            positive: positive,
+            negative: negative,
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
@@ -320,13 +351,14 @@ async function collectQuery(query: QueryRequest,
         }
     }
 
-    if (searchRequest === null && scrollRequest === null){
-        throw new Error("Must supply a search request or a scroll request.");
+    if (searchRequest === null && scrollRequest === null && recommendRequest === null){
+        throw new Error("Must supply a search/scroll/reccomend request.");
     }
 
     let queryCollection: QueryCollection = {
         searchRequest: searchRequest,
-        scrollRequest: scrollRequest
+        scrollRequest: scrollRequest,
+        recomendRequest: recommendRequest
     };
     return queryCollection;
 };
@@ -457,47 +489,27 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
 
     const individualCollectionName: string = query.collection.slice(0, -1);
     let vectorSearch: boolean = false;
+    let reccomendSearch: boolean = false;
     let args = Object.keys(query.arguments);
-    let textParamCounter: number = 0;
     // Handle the argument collection
     for (let arg of args) {
         switch (arg) {
             case "vector":
                 vectorSearch = true;
                 break;
-            case "search":
-                textParamCounter += 1;
+            case "positive":
+                reccomendSearch = true;
                 break;
-            case "searchModel":
-                textParamCounter += 1;
-                break;
-            case "searchUrl":
-                textParamCounter += 1;
+            case "negative":
+                reccomendSearch = true;
                 break;
             default:
                 throw new Error(`Argument ${arg} not implemented`);
         }
     }
 
-    // Adding the ability to call an external API to get embeddings from a string of text.
-    if (textParamCounter === 3) {
-        throw new Error("Currently not implemented");
-        // What if we smashed vectors together. To combine multiple sensory vectors, i.e. images, text, and audio... vector into a bigger vector by combining the vector of an image and some text? 🤔💭
-        // let search: string = query.arguments.search.value as string;
-        // let searchUrl: string = query.arguments.searchUrl.value as string;
-        // let searchModel: string = query.arguments.searchModel.value as string;
-        // const response = await axios.post(searchUrl, {
-        //     search: search,
-        //     model: searchModel
-        // });
-        // let responseData: number[] = response.data;
-        // query.arguments.vector = {
-        //     type: "literal",
-        //     value: responseData
-        // };
-        // vectorSearch = true;
-    } else if (textParamCounter > 0) {
-        throw new Error("You must provide a search, searchModel, and searchUrl to perform a text-search");
+    if (vectorSearch && reccomendSearch){
+        throw new Error("Cannot perform a vector search and use recommenders!");
     }
 
     // Collect the payload fields to include in the response. 
@@ -519,6 +531,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     // Here we collect all the queries we might want to make.
     let scrollQueries: ScrollRequest[] = [];
     let searchQueries: SearchRequest[] = [];
+    let recommendQueries: RecommendRequest[] = [];
 
     let queryResponse: QueryCollection;
     if (query.variables === undefined || query.variables === null){
@@ -526,6 +539,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         queryResponse = await collectQuery(
             query,
             vectorSearch,
+            reccomendSearch,
             includedPayloadFields,
             includeVector,
             null
@@ -534,7 +548,9 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
             scrollQueries.push(queryResponse.scrollRequest);
         } else if (queryResponse.searchRequest !== null){
             searchQueries.push(queryResponse.searchRequest);
-        } else {
+        } else if (queryResponse.recomendRequest !== null) {
+            recommendQueries.push(queryResponse.recomendRequest);
+        } else{
             throw new Error("Unknown Query type not supported");
         }
     } else {
@@ -544,6 +560,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
             return collectQuery(
                 query,
                 vectorSearch,
+                reccomendSearch,
                 includedPayloadFields,
                 includeVector,
                 vSet
@@ -555,6 +572,8 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
                 scrollQueries.push(result.scrollRequest);
             } else if (result.searchRequest !== null){
                 searchQueries.push(result.searchRequest);
+            } else if (result.recomendRequest !== null) {
+                recommendQueries.push(result.recomendRequest);
             } else {
                 throw new Error("Unknown Query Type not supported");
             }
@@ -578,6 +597,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         collectionName: individualCollectionName,
         scrollQueries: scrollQueries,
         searchQueries: searchQueries,
+        recommendQueries: recommendQueries,
         orderedFields: orderedFields,
         dropAggregateRows: dropAggregateRows
     };
@@ -592,13 +612,9 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
  * 
  * @async
  * @param {QueryRequest} query - The original query request.
- * @param {string} collectionName - Name of the collection in qdrant against which the queries will be executed.
- * @param {ScrollRequest[]} scrollQueries - An array of scroll requests. Each request specifies criteria for retrieving a set of points from the collection.
- * @param {SearchRequest[]} searchQueries - An array of search requests. Each request specifies criteria for searching points within the collection.
+ * @param {QueryPlan} queryPlan - The query plan
  * @param {string} qdrantUrl - The URL endpoint for the qdrant service.
  * @param {string | null} qdrantApiKey - The API key for the qdrant service. Can be null if not required.
- * @param {string[]} orderedFields - An ordered list of fields that are expected in the query results. This helps in structuring the returned rows.
- * @param {string[]} dropAggregateRows - Fields that need to be dropped from the row but are required to calculate the aggregate
  * @returns {Promise<RowSet[]>} - A promise that resolves to an array of row sets. Each row set contains 
  *                                the rows of data retrieved from the query and any associated aggregate results.
  * @throws {Error} If an unknown type of query is provided or if an unsupported field is encountered in the results.
@@ -607,13 +623,9 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
  */
 export async function performQueries(
     query: QueryRequest,
-    collectionName: string, 
-    scrollQueries: ScrollRequest[], 
-    searchQueries: SearchRequest[],
+    queryPlan: QueryPlan,
     qdrantUrl: string,
-    qdrantApiKey: string | null,
-    orderedFields: string[],
-    dropAggregateRows: string[]): Promise<RowSet[]>{
+    qdrantApiKey?: string): Promise<RowSet[]>{
     let rowSets: RowSet[] = [];
     let results: {
         id: string | number;
@@ -628,17 +640,24 @@ export async function performQueries(
     }[][];
     // Scroll Queries are a list of scroll requests
     // SearchQueries are a list of search requests and can be batched!
-    if (scrollQueries.length > 0) {
+    if (queryPlan.scrollQueries.length > 0) {
         // Run the scrollQueries
-        let promises = scrollQueries.map(scrollQuery => {
+        let promises = queryPlan.scrollQueries.map(scrollQuery => {
             let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-            return client.scroll(collectionName, scrollQuery);
+            return client.scroll(queryPlan.collectionName, scrollQuery);
         });
         results = (await Promise.all(promises)).map(r => r.points);
-    } else if (searchQueries.length > 0){
+    } else if (queryPlan.searchQueries.length > 0){
         // Run the searchQueries as a batch!
         let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-        results = await client.searchBatch(collectionName, {searches: searchQueries});
+        results = await client.searchBatch(queryPlan.collectionName, {searches: queryPlan.searchQueries});
+    } else if (queryPlan.recommendQueries.length > 0) {
+        // Run the reccomendQueries as a batch!
+        let client = getQdrantClient(qdrantUrl, qdrantApiKey);
+        results = await client.recommend_batch(queryPlan.collectionName,
+            {
+                searches: queryPlan.recommendQueries
+            });
     } else {
         throw new Error("Unknown Query Type");
     }
@@ -649,7 +668,7 @@ export async function performQueries(
         let aggVars: {[key: string]: any} = {};
         for (let p of result){
             let row: RowFieldValue = {};
-            for (let rowField of orderedFields){
+            for (let rowField of queryPlan.orderedFields){
                 if (rowField === "id"){
                     row.id = p.id;
                 } else if (rowField === "vector") {
@@ -670,7 +689,7 @@ export async function performQueries(
                 } 
             }
             rowAggregate(aggResults, aggVars, query, row, result.length);
-            for (let undef of dropAggregateRows){
+            for (let undef of queryPlan.dropAggregateRows){
                 delete row[undef]
             }
             rows.push(row);
@@ -700,16 +719,12 @@ export async function performQueries(
  * @param {string | null} qdrantApiKey - The API key for the qdrant service (can be null).
  * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
-export async function postQuery(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, qdrantUrl: string, qdrantApiKey: string | null): Promise<QueryResponse> {
+export async function doQuery(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, qdrantUrl: string, qdrantApiKey?: string): Promise<QueryResponse> {
     let queryPlan = await planQueries(query, collectionNames, collectionFields);
     return await performQueries(
         query,
-        queryPlan.collectionName,
-        queryPlan.scrollQueries,
-        queryPlan.searchQueries,
+        queryPlan,
         qdrantUrl,
-        qdrantApiKey,
-        queryPlan.orderedFields,
-        queryPlan.dropAggregateRows
+        qdrantApiKey
     );
 };

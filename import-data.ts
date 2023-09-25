@@ -3,12 +3,12 @@ import fs from 'fs';
 
 const DEFAULT_DATA_FILE = "./__tests__/data/data.json";
 const DEFAULT_QDRANT_URL = "http://localhost:6333";
-const DEFAULT_API_KEY = null;
-
+const DEFAULT_DISTANCE_METRIC = "Cosine";
 const args = process.argv.slice(2);
 let dataFilePath = DEFAULT_DATA_FILE;
 let qdrantUrl = DEFAULT_QDRANT_URL;
-let apiKey: string | null = DEFAULT_API_KEY;
+let apiKey: string | undefined = undefined;
+let distanceMetric: "Cosine" | "Euclid" | "Dot" = DEFAULT_DISTANCE_METRIC;
 
 for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -22,6 +22,15 @@ for (let i = 0; i < args.length; i++) {
             break;
         case '--key':
             apiKey = args[i + 1];
+            i++;
+            break;
+        case '--distance':
+            if (["Cosine", "Euclid", "Dot"].includes(args[i + 1])) {
+                distanceMetric = args[i + 1] as "Cosine" | "Euclid" | "Dot";
+            } else {
+                console.error(`Invalid distance metric: ${args[i + 1]}. Supported metrics are "Cosine", "Euclid", and "Dot".`);
+                process.exit(1);
+            }
             i++;
             break;
         default:
@@ -69,7 +78,7 @@ async function setupDatabase() {
             await client.createCollection(key, {
                 vectors: {
                     size: collectionLen,
-                    distance: "Cosine"
+                    distance: distanceMetric
                 }
             });
         }
