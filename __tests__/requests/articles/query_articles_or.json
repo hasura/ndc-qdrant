@@ -1,0 +1,122 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "vector": {
+                    "type": "column",
+                    "column": "vector"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                },
+                "bool": {
+                    "type": "column",
+                    "column": "bool"
+                },
+                "float": {
+                    "type": "column",
+                    "column": "float"
+                }
+            },
+            "where": {
+                "type": "or",
+                "expressions": [
+                    {
+                        "type": "binary_comparison_operator",
+                        "column": {
+                            "type": "column",
+                            "name": "bool",
+                            "path": []
+                        },
+                        "operator": {
+                            "type": "equal"
+                        },
+                        "value": {
+                            "type": "scalar",
+                            "value": true
+                        }
+                    },
+                    {
+                        "type": "binary_comparison_operator",
+                        "column": {
+                            "type": "column",
+                            "name": "float",
+                            "path": []
+                        },
+                        "operator": {
+                            "type": "equal"
+                        },
+                        "value": {
+                            "type": "scalar",
+                            "value": 1.5
+                        }
+                    }
+                ]
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 1,
+                    "vector": [
+                        0.04082755,
+                        0.4980961,
+                        0.62057877,
+                        0.60424775
+                    ],
+                    "string": "Berlin",
+                    "bool": true,
+                    "float": 1.5
+                },
+                {
+                    "id": 2,
+                    "vector": [
+                        0.29041705,
+                        0.44369268,
+                        0.37915558,
+                        0.75831115
+                    ],
+                    "string": "Moscow",
+                    "bool": false,
+                    "float": 1.5
+                },
+                {
+                    "id": 5,
+                    "vector": [
+                        0.6050693,
+                        0.13830155,
+                        0.19016463,
+                        0.7606585
+                    ],
+                    "string": "Mumbai",
+                    "bool": true,
+                    "float": 1.2
+                },
+                {
+                    "id": 6,
+                    "vector": [
+                        0.04082755,
+                        0.4980961,
+                        0.62057877,
+                        0.60424775
+                    ],
+                    "string": "Berlin",
+                    "bool": true,
+                    "float": 1.5
+                }
+            ]
+        }
+    ]
+}

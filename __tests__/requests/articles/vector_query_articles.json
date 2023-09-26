@@ -1,0 +1,83 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {
+            "vector": {
+                "type": "literal",
+                "value": [
+                    0.35, 0.08, 0.11, 0.44
+                ]
+            }
+        },
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "vector": {
+                    "type": "column",
+                    "column": "vector"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                },
+                "bool": {
+                    "type": "column",
+                    "column": "bool"
+                },
+                "score": {
+                    "type": "column",
+                    "column": "score"
+                }
+            },
+            "limit": 3
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+          "rows": [
+            {
+              "id": 5,
+              "vector": [
+                0.6050693,
+                0.13830155,
+                0.19016463,
+                0.7606585
+              ],
+              "score": 1.0000001,
+              "string": "Mumbai",
+              "bool": true
+            },
+            {
+              "id": 4,
+              "vector": [
+                0.41652608,
+                0.3123946,
+                0.38181558,
+                0.76363117
+              ],
+              "score": 0.9487021,
+              "string": "Beijing",
+              "bool": false
+            },
+            {
+              "id": 2,
+              "vector": [
+                0.29041705,
+                0.44369268,
+                0.37915558,
+                0.75831115
+              ],
+              "score": 0.8860036,
+              "string": "Moscow",
+              "bool": false
+            }
+          ]
+        }
+      ]
+}

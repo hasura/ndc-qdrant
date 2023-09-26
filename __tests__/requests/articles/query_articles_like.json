@@ -1,0 +1,50 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                }
+            },
+            "where": {
+                "type": "binary_comparison_operator",
+                "column": {
+                    "type": "column",
+                    "name": "string",
+                    "path": []
+                },
+                "operator": {
+                    "type": "like"
+                },
+                "value": {
+                    "type": "scalar",
+                    "value": "M"
+                }
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 2,
+                    "string": "Moscow"
+                },
+                {
+                    "id": 5,
+                    "string": "Mumbai"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {
+            "positive": {
+                "type": "literal",
+                "value": [
+                    2
+                ]
+            },
+            "negative": {
+                "type": "literal",
+                "value": [
+                    1
+                ]
+            }
+        },
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                }
+            },
+            "limit": 3
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 5
+                },
+                {
+                    "id": 4
+                },
+                {
+                    "id": 6
+                }
+            ]
+        }
+    ]
+}

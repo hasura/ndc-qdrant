@@ -1,0 +1,61 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "articles",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "vector": {
+                    "type": "column",
+                    "column": "vector"
+                },
+                "string": {
+                    "type": "column",
+                    "column": "string"
+                },
+                "bool": {
+                    "type": "column",
+                    "column": "bool"
+                }
+            },
+            "where": {
+                "type": "binary_comparison_operator",
+                "column": {
+                    "type": "column",
+                    "name": "id",
+                    "path": []
+                },
+                "operator": {
+                    "type": "equal"
+                },
+                "value": {
+                    "type": "scalar",
+                    "value": 1
+                }
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+            "rows": [
+                {
+                    "id": 1,
+                    "vector": [
+                        0.04082755,
+                        0.4980961,
+                        0.62057877,
+                        0.60424775
+                    ],
+                    "string": "Berlin",
+                    "bool": true
+                }
+            ]
+        }
+    ]
+}

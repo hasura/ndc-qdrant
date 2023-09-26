@@ -1,18 +1,15 @@
-import { QdrantClient } from "@qdrant/js-client-rest";
-import { QdrantClientConfig } from "./config";
+import {QdrantClient} from "@qdrant/js-client-rest";
 
-
-
-export function getQdrantClient(config: QdrantClientConfig): QdrantClient {
-    if (config.apiKey === null){
+export function getQdrantClient(url: string, apiKey?: string): QdrantClient {
+    if (!apiKey){
         return new QdrantClient(
             {
-                url: config.url
+                url: url
             }
         );
     }
     return new QdrantClient({
-        url: config.url,
-        apiKey: config.apiKey
+        url: url,
+        apiKey: apiKey
     });
-}
+};
