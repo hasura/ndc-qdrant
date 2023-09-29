@@ -1,518 +1,329 @@
 {
     "qdrant_url": "http://localhost:6333",
-    "object_types": {
-        "boolean": {
-            "description": null,
-            "fields": {
-                "A": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Bool"
-                        }
-                    }
-                },
-                "B": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Bool"
-                        }
-                    }
-                },
-                "C": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Bool"
-                        }
-                    }
-                },
-                "D": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Bool"
-                        }
-                    }
-                },
-                "id": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "named",
-                        "name": "Int"
-                    }
-                },
-                "score": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "vector": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "named",
-                                "name": "Float"
-                            }
-                        }
-                    }
-                }
-            }
+    "config": {
+        "collection_names": [
+            "booleans",
+            "articles",
+            "users"
+        ],
+        "object_fields": {
+            "boolean": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "id",
+                "score",
+                "vector"
+            ],
+            "article": [
+                "arr",
+                "bool",
+                "float",
+                "int",
+                "string",
+                "id",
+                "score",
+                "vector"
+            ],
+            "user_nested_nestedAgain": [
+                "key1"
+            ],
+            "user_nested": [
+                "key1",
+                "key2",
+                "nestedAgain"
+            ],
+            "user": [
+                "nested",
+                "id",
+                "score",
+                "vector"
+            ]
         },
-        "multimodal_recipe": {
-            "description": null,
-            "fields": {
-                "image_name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "ingredients": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "nullable",
-                                "underlying_type": {
-                                    "type": "named",
-                                    "name": "String"
-                                }
-                            }
-                        }
-                    }
-                },
-                "name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "steps": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_image": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_text": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "id": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "named",
-                        "name": "Int"
-                    }
-                },
-                "score": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "vector": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
+        "object_types": {
+            "boolean": {
+                "description": null,
+                "fields": {
+                    "A": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
                                 "type": "named",
-                                "name": "Float"
+                                "name": "Bool"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "text_recipe": {
-            "description": null,
-            "fields": {
-                "image_name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "ingredients": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "nullable",
-                                "underlying_type": {
-                                    "type": "named",
-                                    "name": "String"
-                                }
-                            }
-                        }
-                    }
-                },
-                "name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "steps": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_image": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_text": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "id": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "named",
-                        "name": "Int"
-                    }
-                },
-                "score": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "vector": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
+                    },
+                    "B": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
                                 "type": "named",
-                                "name": "Float"
+                                "name": "Bool"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "image_recipe": {
-            "description": null,
-            "fields": {
-                "image_name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "ingredients": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "nullable",
-                                "underlying_type": {
-                                    "type": "named",
-                                    "name": "String"
-                                }
-                            }
-                        }
-                    }
-                },
-                "name": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "steps": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_image": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "vector_text": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "id": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "named",
-                        "name": "Int"
-                    }
-                },
-                "score": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "vector": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
+                    },
+                    "C": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
                                 "type": "named",
-                                "name": "Float"
+                                "name": "Bool"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "article": {
-            "description": null,
-            "fields": {
-                "arr": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "nullable",
-                                "underlying_type": {
-                                    "type": "named",
-                                    "name": "Int"
-                                }
+                    },
+                    "D": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
                             }
                         }
-                    }
-                },
-                "bool": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Bool"
-                        }
-                    }
-                },
-                "float": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "int": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
+                    },
+                    "id": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
                             "type": "named",
                             "name": "Int"
                         }
-                    }
-                },
-                "string": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "String"
-                        }
-                    }
-                },
-                "id": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "named",
-                        "name": "Int"
-                    }
-                },
-                "score": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "named",
-                            "name": "Float"
-                        }
-                    }
-                },
-                "vector": {
-                    "description": null,
-                    "arguments": {},
-                    "type": {
-                        "type": "nullable",
-                        "underlying_type": {
-                            "type": "array",
-                            "element_type": {
+                    },
+                    "score": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
                                 "type": "named",
                                 "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "article": {
+                "description": null,
+                "fields": {
+                    "arr": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "nullable",
+                                    "underlying_type": {
+                                        "type": "named",
+                                        "name": "Int"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "bool": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "float": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "int": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "string": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "user_nested_nestedAgain": {
+                "description": null,
+                "fields": {
+                    "key1": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    }
+                },
+                "is_object": true
+            },
+            "user_nested": {
+                "description": null,
+                "fields": {
+                    "key1": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "key2": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "nestedAgain": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "named",
+                            "name": "user_nested_nestedAgain"
+                        }
+                    }
+                },
+                "is_object": true
+            },
+            "user": {
+                "description": null,
+                "fields": {
+                    "nested": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "named",
+                            "name": "user_nested"
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "arguments": {},
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    },
-    "functions": [],
-    "procedures": []
+        },
+        "functions": [],
+        "procedures": []
+    }
 }

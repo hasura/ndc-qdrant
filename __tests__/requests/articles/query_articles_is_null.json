@@ -27,7 +27,9 @@
                 "type": "unary_comparison_operator",
                 "operator": "is_null",
                 "column": {
-                    "name": "bool"
+                    "type": "column",
+                    "name": "bool",
+                    "path": []
                 }
             }
         },

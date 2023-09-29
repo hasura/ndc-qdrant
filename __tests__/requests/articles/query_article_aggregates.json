@@ -46,11 +46,11 @@
                 },
                 "column_count": {
                     "type": "column_count",
-                    "column": "bool"
+                    "column": "bool",
+                    "distinct": false
                 },
                 "star_count": {
-                    "type": "star_count",
-                    "column": "bool"
+                    "type": "star_count"
                 }
             }
         },
