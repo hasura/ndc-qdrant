@@ -19,7 +19,8 @@
                     "path": []
                 },
                 "operator": {
-                    "type": "gte"
+                    "type": "other",
+                    "name": "gte"
                 },
                 "value": {
                     "type": "scalar",

@@ -19,7 +19,8 @@
                     "path": []
                 },
                 "operator": {
-                    "type": "lte"
+                    "type": "other",
+                    "name": "lte"
                 },
                 "value": {
                     "type": "scalar",

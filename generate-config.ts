@@ -83,7 +83,7 @@ const baseFields: Record<string, FieldDefinition> = {
     },
 };
 
-const recursiveType = (val: any): FieldType => {
+const recursiveType = (val: any, namePrefix: string, objTypes: any): FieldType => {
     const wrapNull = (x: FieldType): FieldType => ({
         type: "nullable",
         underlying_type: x
@@ -93,7 +93,7 @@ const recursiveType = (val: any): FieldType => {
         const new_val = val.length === 0 ? "str" : val[0];
         return wrapNull({
             type: "array",
-            element_type: recursiveType(new_val)
+            element_type: recursiveType(new_val, namePrefix, objTypes)
         });
     } else if (typeof val === 'boolean') {
         return wrapNull({
@@ -117,18 +117,38 @@ const recursiveType = (val: any): FieldType => {
                 name: "Float"
             });
         }
+    } else if (typeof val === "object") {
+        const fDict: any = {};
+        for (const [k, v] of Object.entries(val)) {
+            const nestedName = namePrefix + "_" + k;
+            const fieldType = recursiveType(v, nestedName, objTypes);
+            fDict[k] = {
+                description: null,
+                arguments: {},
+                type: fieldType
+            };
+        }
+        objTypes[namePrefix] = {
+            description: null,
+            fields: fDict,
+            is_object: true
+        };
+        return {
+            type: "named",
+            name: namePrefix
+        };
     } else {
         throw new Error(`Not Implemented: ${typeof val}`);
     }
 }
 
-const insertion = (payloadDict: Record<string, any>): Record<string, FieldDefinition> => {
+const insertion = (collectionName: string, payloadDict: Record<string, any>, objTypes: any): Record<string, FieldDefinition> => {
     let responseDict: Record<string, FieldDefinition> = {};
     for (const [k, v] of Object.entries(payloadDict)) {
         responseDict[k] = {
             description: null,
             arguments: {},
-            type: recursiveType(v)
+            type: recursiveType(v, collectionName + "_" + k, objTypes)
         }
     }
     return responseDict;
@@ -137,6 +157,7 @@ const insertion = (payloadDict: Record<string, any>): Record<string, FieldDefini
 async function main() {
     const collections = await client.getCollections();
     const collectionNames = collections.collections.map(c => c.name);
+    const pluralCollectionNames = collectionNames.map((i) => i + "s");
 
     let objectTypes: Record<string, any> = {};
     for (const cn of collectionNames) {
@@ -147,7 +168,7 @@ async function main() {
         let fieldDict = {};
         if (records.length > 0) {
             const recordPayload = records[0].payload;
-            fieldDict = insertion(recordPayload!);
+            fieldDict = insertion(cn, recordPayload!, objectTypes);
         }
         objectTypes[cn] = {
             description: null,
@@ -158,12 +179,21 @@ async function main() {
         }
     }
 
+    const objectFields: Record<string, string[]> = {};
+    for (const [cn, objectType] of Object.entries(objectTypes)) {
+        objectFields[cn] = Object.keys(objectType.fields);
+    }
+
     console.log(`Writing object_types and collections to ${outputFileName}`);
     let res: any = {
         qdrant_url: clientUrl,
-        object_types: objectTypes,
-        functions: [],
-        procedures: []
+        config: {
+            collection_names: pluralCollectionNames,
+            object_fields: objectFields,
+            object_types: objectTypes,
+            functions: [],
+            procedures: []
+        }
     };
     if (apiKey){
         res["qdrant_api_key"] = apiKey;

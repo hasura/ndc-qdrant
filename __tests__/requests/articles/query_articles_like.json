@@ -23,7 +23,8 @@
                     "path": []
                 },
                 "operator": {
-                    "type": "like"
+                    "type": "other",
+                    "name": "like"
                 },
                 "value": {
                     "type": "scalar",

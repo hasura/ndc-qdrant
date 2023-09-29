@@ -19,7 +19,8 @@
                     "path": []
                 },
                 "operator": {
-                    "type": "lt"
+                    "type": "other",
+                    "name": "lt"
                 },
                 "value": {
                     "type": "scalar",

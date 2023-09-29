@@ -1,5 +1,5 @@
-import { QueryRequest, Expression } from "ts-connector-sdk/schemas/QueryRequest";
-import { QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/schemas/QueryResponse";
+import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/src/schemas";
+import { BadRequest, Conflict, NotSupported } from "ts-connector-sdk/src/index";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
@@ -17,7 +17,6 @@ export type QueryPlan = {
     orderedFields: string[];
     dropAggregateRows: string[];
 };
-
 
 type VarSet = {
     [key: string]: any
@@ -62,27 +61,26 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     ]
                     break;
                 default:
-                    throw new Error("Unknown Unary Comparison Operator");
+                    throw new BadRequest("Unknown Unary Comparison Operator", {"Unknown Operator": "This should never happen."});
             }
             break;
         case "binary_comparison_operator":
-            let operator: string = expression.operator.type;
             let value: any;
             switch (expression.value.type) {
                 case "scalar":
                     value = expression.value.value
                     break;
                 case "column":
-                    throw new Error("Binary comparison operator on column Not implemented");
+                    throw new NotSupported("Binary comparisons on columns are not supported yet.", {});
                 case "variable":
                     if (varSet !== null) {
                         value = varSet[expression.value.name];
                     }
                     break;
                 default:
-                    throw new Error("Unknown Binary Comparison Operator");
+                    throw new BadRequest("Unknown Binary Comparison Operator", {"Unknown Expression Value Type": "This should never happen."});
             }
-            switch (operator) {
+            switch (expression.operator.type) {
                 case "equal":
                     if (expression.column.name === "id") {
                         filter.must = [
@@ -109,99 +107,105 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ];
                     } else {
-                        throw new Error(`Cannot perform equality comparison on ${expression.column.name}`);
+                        throw new NotSupported(`Cannot perform equality comparison on ${expression.column.name}`, {});
                     }
                     break;
-                case "like":
-                    if (typeof value === "string") {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                match: {
-                                    "text": value
-                                }
+                case "other":
+                    switch (expression.operator.name){
+                        case "like":
+                            if (typeof value === "string") {
+                                filter.must = [
+                                    {
+                                        key: expression.column.name,
+                                        match: {
+                                            "text": value
+                                        }
+                                    }
+                                ]
+                            } else {
+                                throw new NotSupported(`Like is not implemented for ${typeof value}`, {});
                             }
-                        ]
-                    } else {
-                        throw new Error(`Like is not implemented for ${typeof value}`);
-                    }
-                    break;
-                case "gt":
-                    if (expression.column.name === "id") {
-                        throw Error("Cannot perform > operation on column ID");
-                    }
-                    if (typeof value === "number") {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                range: {
-                                    gt: value
-                                }
+                            break;
+                        case "gt":
+                            if (expression.column.name === "id") {
+                                throw new NotSupported("Cannot perform > operation on column ID", {});
                             }
-                        ]
-                    } else {
-                        throw new Error("> operation only supported by number types");
-                    }
-                    break;
-                case "lt":
-                    if (expression.column.name === "id") {
-                        throw Error("Cannot perform < operation on column ID");
-                    }
-                    if (typeof value === "number") {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                range: {
-                                    lt: value
-                                }
+                            if (typeof value === "number") {
+                                filter.must = [
+                                    {
+                                        key: expression.column.name,
+                                        range: {
+                                            gt: value
+                                        }
+                                    }
+                                ]
+                            } else {
+                                throw new NotSupported("> operation only supported by number types", {});
                             }
-                        ]
-                    } else {
-                        throw new Error("< operation only supported by number types");
-                    }
-                    break;
-                case "gte":
-                    if (expression.column.name === "id") {
-                        throw Error("Cannot perform >= operation on columb ID");
-                    }
-                    if (typeof value === "number") {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                range: {
-                                    gte: value
-                                }
+                            break;
+                        case "lt":
+                            if (expression.column.name === "id") {
+                                throw new NotSupported("Cannot perform < operation on column ID", {});
                             }
-                        ]
-                    } else {
-                        throw new Error(">= operation only supported by number types");
-                    }
-                    break;
-                case "lte":
-                    if (expression.column.name === "id") {
-                        throw Error("Cannot perform <= operation on column ID");
-                    }
-                    if (typeof value === "number") {
-                        filter.must = [
-                            {
-                                key: expression.column.name,
-                                range: {
-                                    lte: value
-                                }
+                            if (typeof value === "number") {
+                                filter.must = [
+                                    {
+                                        key: expression.column.name,
+                                        range: {
+                                            lt: value
+                                        }
+                                    }
+                                ]
+                            } else {
+                                throw new NotSupported("< operation only supported by number types", {});
                             }
-                        ]
-                    } else {
-                        throw new Error("<= operation only supported by number types");
+                            break;
+                        case "gte":
+                            if (expression.column.name === "id") {
+                                throw new NotSupported("Cannot perform >= operation on columb ID", {});
+                            }
+                            if (typeof value === "number") {
+                                filter.must = [
+                                    {
+                                        key: expression.column.name,
+                                        range: {
+                                            gte: value
+                                        }
+                                    }
+                                ]
+                            } else {
+                                throw new NotSupported(">= operation only supported by number types", {});
+                            }
+                            break;
+                        case "lte":
+                            if (expression.column.name === "id") {
+                                throw new NotSupported("Cannot perform <= operation on column ID", {});
+                            }
+                            if (typeof value === "number") {
+                                filter.must = [
+                                    {
+                                        key: expression.column.name,
+                                        range: {
+                                            lte: value
+                                        }
+                                    }
+                                ]
+                            } else {
+                                throw new NotSupported("<= operation only supported by number types", {});
+                            }
+                            break;
+                        default:
+                            throw new NotSupported("Invalid Expression Operator Name", {});
                     }
                     break;
                 default:
-                    throw new Error("Binary Comparison Custom Operator not implemented");
+                    throw new BadRequest("Binary Comparison Custom Operator not implemented", {"Unknown Expression Value Type": "This should never happen."});
             }
             break;
         case "binary_array_comparison_operator":
             if (expression.operator === "in") {
                 if (expression.values.length === 0) {
-                    throw new Error("In requires an array of items");
+                    throw new NotSupported("In requires an array of items", {});
                 }
                 if (expression.column.name === "id") {
                     filter.must = [
@@ -212,7 +216,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     break;
                 }
                 if (expression.column.name === "vector") {
-                    throw new Error("Vector in not implemented");
+                    throw new NotSupported("Vector in not implemented", {});
                 }
                 let matchList: any[] = [];
                 for (let val of expression.values) {
@@ -222,11 +226,11 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             break;
                         case "variable":
                             // Is this not in spec?
-                            throw new Error("In not supported by variables");
+                            throw new NotSupported("In not supported by variables", {});
                         case "column":
-                            throw new Error("In not supported on columns");
+                            throw new NotSupported("In not supported on columns", {});
                         default:
-                            throw new Error("In not supported on unknown value type");
+                            throw new BadRequest("In not supported on unknown value type", {});
                     }
                 }
                 filter.must = [
@@ -236,7 +240,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     }
                 ]
             } else {
-                throw new Error("Binary Array Comparison Operator not implemented!");
+                throw new BadRequest("Binary Array Comparison Operator not implemented!", {});
             }
             break;
         case "and":
@@ -249,9 +253,9 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
             filter.must_not = [recursiveBuildFilter(expression.expression, {}, varSet)];
             break;
         case "exists":
-            throw new Error("Expression type Exists not implemented!");
+            throw new NotSupported("Expression type Exists not implemented!", {});
         default:
-            throw new Error("Unknown Expression Type!");
+            throw new BadRequest("Unknown Expression Type!", {});
     }
     return filter;
 };
@@ -291,12 +295,12 @@ async function collectQuery(query: QueryRequest,
     let recommendRequest: RecommendRequest | null = null;
     if (vectorSearch) {
         let v: number[] = [];
-        if (query.arguments.vector.type === "literal"){
+        if (query.arguments.vector.type === "literal") {
             v = query.arguments.vector.value as number[];
-        } else if (query.arguments.vector.type === "variable" && varSet !== null){
+        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
             v = varSet[query.arguments.vector.name] as number[];
         } else {
-            throw new Error("Failed to load vector, which must be a flat array of flaots");
+            throw new BadRequest("Failed to load vector, which must be a flat array of flaots", {});
         }
         searchRequest = {
             vector: v,
@@ -311,22 +315,22 @@ async function collectQuery(query: QueryRequest,
     } else if (recommendSearch) {
         let positive: number[] = [];
         let negative: number[] = [];
-        if (query.arguments.positive.type === "literal"){
+        if (query.arguments.positive.type === "literal") {
             positive = query.arguments.positive.value as number[];
-        } else if (query.arguments.positive.type === "variable" && varSet !== null){
+        } else if (query.arguments.positive.type === "variable" && varSet !== null) {
             positive = varSet[query.arguments.positive.name] as number[];
         } else {
-            throw new Error("Unknown Positive type provided");
+            throw new BadRequest("Unknown Positive type provided", {});
         }
-        if (query.arguments.negative !== undefined && query.arguments.negative !== null){
-            if (query.arguments.negative.type === "literal"){
+        if (query.arguments.negative !== undefined && query.arguments.negative !== null) {
+            if (query.arguments.negative.type === "literal") {
                 negative = query.arguments.negative.value as number[];
-            } else if (query.arguments.negative.type === "variable" && varSet !== null){
+            } else if (query.arguments.negative.type === "variable" && varSet !== null) {
                 negative = varSet[query.arguments.negative.name] as number[];
             }
         }
-        if (positive.length === 0){
-            throw new Error("Cannot get recommendation without providing positive context.");
+        if (positive.length === 0) {
+            throw new BadRequest("Cannot get recommendation without providing positive context.", {});
         }
         recommendRequest = {
             positive: positive,
@@ -351,8 +355,8 @@ async function collectQuery(query: QueryRequest,
         }
     }
 
-    if (searchRequest === null && scrollRequest === null && recommendRequest === null){
-        throw new Error("Must supply a search/scroll/reccomend request.");
+    if (searchRequest === null && scrollRequest === null && recommendRequest === null) {
+        throw new BadRequest("Must supply a search/scroll/reccomend request.", {});
     }
 
     let queryCollection: QueryCollection = {
@@ -382,7 +386,7 @@ async function collectQuery(query: QueryRequest,
  *   const aggResult = rowAggregate(accumulatedAggs, aggVariables, myQuery, singleRow, totalRows);
  * 
  */
-function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]: any},  query: QueryRequest, row: RowFieldValue, numRows: number): {[key: string]: any} {
+function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: string]: any }, query: QueryRequest, row: RowFieldValue, numRows: number): { [key: string]: any } {
     if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
         for (let [key, agg] of Object.entries(query.query.aggregates)) {
             switch (agg.type) {
@@ -402,7 +406,7 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
                                 aggResults[key] += row[agg.column];
                                 break;
                             } else {
-                                throw new Error("Sum operation not supported on this type");
+                                throw new NotSupported("Sum operation not supported on this type", {});
                             }
                         case "avg":
                             if (typeof row[agg.column] === "number") {
@@ -412,10 +416,10 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
                                 aggResults[key] += (row[agg.column] as unknown as number / numRows) as number;
                                 break;
                             } else {
-                                throw new Error("Average operation not supported on this type");
+                                throw new NotSupported("Average operation not supported on this type", {});
                             }
                         default:
-                            throw new Error("Unknown aggregate operation not supported!");
+                            throw new BadRequest("Unknown aggregate operation not supported!", {});
                     }
                     break;
                 case "column_count":
@@ -443,7 +447,7 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
                     aggResults[key] += 1;
                     break;
                 default:
-                    throw new Error("Unkown aggregate type not supported.");
+                    throw new BadRequest("Unkown aggregate type not supported.", {});
             }
         }
     }
@@ -466,30 +470,30 @@ function rowAggregate(aggResults: {[key: string]: any}, aggVars: {[key: string]:
  * @example
  *   const myQueryPlan = await planQueries(myQuery, availableCollections, availableFields);
  */
-export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<QueryPlan>{
+export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }): Promise<QueryPlan> {
     // Assert that the collection is registered in the schema
     if (!collectionNames.includes(query.collection)) {
-        throw new Error("Collection not found in schema!");
+        throw new Conflict("Collection not found in schema!", {});
     }
 
     // Currently not planning to implement relationships - Does not make sense for DB target
     if (Object.keys(query.collection_relationships).length !== 0) {
-        throw new Error("Querying with collection relationships not implemented yet!");
+        throw new NotSupported("Querying with collection relationships not implemented yet!", {});
     }
 
     // TODO: EMPTY FIELDS NOT IMPLEMENTED
     if (query.query.fields === null || Object.keys(query.query.fields!).length === 0) {
-        throw new Error("Querying with null fields not implemented yet!");
+        throw new NotSupported("Querying with null fields not implemented yet!", {});
     }
 
     // Sorting not supported by database!
     if (query.query.order_by !== undefined && query.query.order_by !== null) {
-        throw new Error("Order by not implemented");
+        throw new NotSupported("Order by not implemented", {});
     }
 
     const individualCollectionName: string = query.collection.slice(0, -1);
     let vectorSearch: boolean = false;
-    let reccomendSearch: boolean = false;
+    let recommendSearch: boolean = false;
     let args = Object.keys(query.arguments);
     // Handle the argument collection
     for (let arg of args) {
@@ -498,18 +502,18 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
                 vectorSearch = true;
                 break;
             case "positive":
-                reccomendSearch = true;
+                recommendSearch = true;
                 break;
             case "negative":
-                reccomendSearch = true;
+                recommendSearch = true;
                 break;
             default:
-                throw new Error(`Argument ${arg} not implemented`);
+                throw new BadRequest(`Argument ${arg} not implemented`, {});
         }
     }
 
-    if (vectorSearch && reccomendSearch){
-        throw new Error("Cannot perform a vector search and use recommenders!");
+    if (vectorSearch && recommendSearch) {
+        throw new BadRequest("Cannot perform a vector search and use recommenders!", {});
     }
 
     // Collect the payload fields to include in the response. 
@@ -519,8 +523,8 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     for (const f in query.query.fields) {
         if (f === "vector") {
             includeVector = true;
-        }  else if (!collectionFields[individualCollectionName].includes(f)) {
-            throw new Error("Requested field not in schema!");
+        } else if (!collectionFields[individualCollectionName].includes(f)) {
+            throw new BadRequest("Requested field not in schema!", {});
         } else {
             includedPayloadFields.push(f);
         }
@@ -534,48 +538,48 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     let recommendQueries: RecommendRequest[] = [];
 
     let queryResponse: QueryCollection;
-    if (query.variables === undefined || query.variables === null){
+    if (query.variables === undefined || query.variables === null) {
         // In the simplest case, we do not have any variables! So we will only have 1 request to make.
         queryResponse = await collectQuery(
             query,
             vectorSearch,
-            reccomendSearch,
+            recommendSearch,
             includedPayloadFields,
             includeVector,
             null
         );
-        if (queryResponse.scrollRequest !== null){
+        if (queryResponse.scrollRequest !== null) {
             scrollQueries.push(queryResponse.scrollRequest);
-        } else if (queryResponse.searchRequest !== null){
+        } else if (queryResponse.searchRequest !== null) {
             searchQueries.push(queryResponse.searchRequest);
         } else if (queryResponse.recomendRequest !== null) {
             recommendQueries.push(queryResponse.recomendRequest);
-        } else{
-            throw new Error("Unknown Query type not supported");
+        } else {
+            throw new BadRequest("Unknown Query type not supported", {});
         }
     } else {
         // When there are variables, we will build multiple queries, which we will either run concurrently, or as a batch if batching is supported. It's only possible to either perform ALL searches, or ALL scrolls.
         let promises = query.variables.map(varSet => {
-        let vSet: VarSet = varSet;
+            let vSet: VarSet = varSet;
             return collectQuery(
                 query,
                 vectorSearch,
-                reccomendSearch,
+                recommendSearch,
                 includedPayloadFields,
                 includeVector,
                 vSet
             );
         });
         let results = await Promise.all(promises);
-        for (let result of results){
-            if (result.scrollRequest !== null){
+        for (let result of results) {
+            if (result.scrollRequest !== null) {
                 scrollQueries.push(result.scrollRequest);
-            } else if (result.searchRequest !== null){
+            } else if (result.searchRequest !== null) {
                 searchQueries.push(result.searchRequest);
             } else if (result.recomendRequest !== null) {
                 recommendQueries.push(result.recomendRequest);
             } else {
-                throw new Error("Unknown Query Type not supported");
+                throw new BadRequest("Unknown Query Type not supported", {});
             }
         }
     };
@@ -625,7 +629,7 @@ export async function performQueries(
     query: QueryRequest,
     queryPlan: QueryPlan,
     qdrantUrl: string,
-    qdrantApiKey?: string): Promise<RowSet[]>{
+    qdrantApiKey?: string): Promise<RowSet[]> {
     let rowSets: RowSet[] = [];
     let results: {
         id: string | number;
@@ -647,10 +651,10 @@ export async function performQueries(
             return client.scroll(queryPlan.collectionName, scrollQuery);
         });
         results = (await Promise.all(promises)).map(r => r.points);
-    } else if (queryPlan.searchQueries.length > 0){
+    } else if (queryPlan.searchQueries.length > 0) {
         // Run the searchQueries as a batch!
         let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-        results = await client.searchBatch(queryPlan.collectionName, {searches: queryPlan.searchQueries});
+        results = await client.searchBatch(queryPlan.collectionName, { searches: queryPlan.searchQueries });
     } else if (queryPlan.recommendQueries.length > 0) {
         // Run the reccomendQueries as a batch!
         let client = getQdrantClient(qdrantUrl, qdrantApiKey);
@@ -659,37 +663,37 @@ export async function performQueries(
                 searches: queryPlan.recommendQueries
             });
     } else {
-        throw new Error("Unknown Query Type");
+        throw new BadRequest("Unknown Query Type", {});
     }
-    for (let result of results){
+    for (let result of results) {
         let rowSet: RowSet = {};
         let rows: RowFieldValue[] = [];
-        let aggResults: {[key: string]: any} = {};
-        let aggVars: {[key: string]: any} = {};
-        for (let p of result){
+        let aggResults: { [key: string]: any } = {};
+        let aggVars: { [key: string]: any } = {};
+        for (let p of result) {
             let row: RowFieldValue = {};
-            for (let rowField of queryPlan.orderedFields){
-                if (rowField === "id"){
+            for (let rowField of queryPlan.orderedFields) {
+                if (rowField === "id") {
                     row.id = p.id;
                 } else if (rowField === "vector") {
                     row.vector = p.vector as number[];
                 } else if (rowField === "score" && "score" in p) {
                     row.score = p.score;
-                } else if (rowField === "version" && "version" in p){
+                } else if (rowField === "version" && "version" in p) {
                     row.version = p.version;
                 } else {
-                    if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)){
+                    if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)) {
                         // These rows are explicitly nullable, and in this case, are null! I.e. User requested the field, and in this row it's null
                         row[rowField] = null;
-                    } else if (p.payload !== undefined && p.payload !== null){
+                    } else if (p.payload !== undefined && p.payload !== null) {
                         row[rowField] = p.payload[rowField] as RowFieldValue;
                     } else {
-                        throw new Error("Unknown Field Not supported");
+                        throw new BadRequest("Unknown Field Not supported", {});
                     }
-                } 
+                }
             }
             rowAggregate(aggResults, aggVars, query, row, result.length);
-            for (let undef of queryPlan.dropAggregateRows){
+            for (let undef of queryPlan.dropAggregateRows) {
                 delete row[undef]
             }
             rows.push(row);
@@ -697,7 +701,7 @@ export async function performQueries(
         rowSet.rows = rows as {
             [k: string]: RowFieldValue;
         }[];
-        if (Object.keys(aggResults).length > 0){
+        if (Object.keys(aggResults).length > 0) {
             rowSet.aggregates = aggResults;
         }
         rowSets.push(rowSet);
@@ -719,7 +723,7 @@ export async function performQueries(
  * @param {string | null} qdrantApiKey - The API key for the qdrant service (can be null).
  * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
-export async function doQuery(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, qdrantUrl: string, qdrantApiKey?: string): Promise<QueryResponse> {
+export async function doQuery(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }, qdrantUrl: string, qdrantApiKey?: string): Promise<QueryResponse> {
     let queryPlan = await planQueries(query, collectionNames, collectionFields);
     return await performQueries(
         query,
