@@ -1,1 +1,475 @@
-{"qdrant_url":"http://localhost:6333","config":{"collection_names":["booleans","articles","users"],"object_fields":{"boolean":["A","B","C","D","id","score","vector"],"article":["arr","bool","float","int","string","id","score","vector"],"user_nested_nestedAgain":["key1"],"user_nested":["key1","key2","nestedAgain"],"user":["nested","id","score","vector"]},"object_types":{"boolean":{"description":null,"fields":{"A":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Bool"}}},"B":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Bool"}}},"C":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Bool"}}},"D":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Bool"}}},"id":{"description":null,"arguments":{},"type":{"type":"named","name":"Int"}},"score":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Float"}}},"vector":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"array","element_type":{"type":"named","name":"Float"}}}}}},"article":{"description":null,"fields":{"arr":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"array","element_type":{"type":"nullable","underlying_type":{"type":"named","name":"Int"}}}}},"bool":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Bool"}}},"float":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Float"}}},"int":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Int"}}},"string":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"String"}}},"id":{"description":null,"arguments":{},"type":{"type":"named","name":"Int"}},"score":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Float"}}},"vector":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"array","element_type":{"type":"named","name":"Float"}}}}}},"user_nested_nestedAgain":{"description":null,"fields":{"key1":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Int"}}}},"is_object":true},"user_nested":{"description":null,"fields":{"key1":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Int"}}},"key2":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"String"}}},"nestedAgain":{"description":null,"arguments":{},"type":{"type":"named","name":"user_nested_nestedAgain"}}},"is_object":true},"user":{"description":null,"fields":{"nested":{"description":null,"arguments":{},"type":{"type":"named","name":"user_nested"}},"id":{"description":null,"arguments":{},"type":{"type":"named","name":"Int"}},"score":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"named","name":"Float"}}},"vector":{"description":null,"arguments":{},"type":{"type":"nullable","underlying_type":{"type":"array","element_type":{"type":"named","name":"Float"}}}}}}},"functions":[],"procedures":[]}}
+{
+    "qdrant_url": "http://localhost:6333",
+    "config": {
+        "collection_names": [
+            "booleans",
+            "articles",
+            "users"
+        ],
+        "object_fields": {
+            "_quantization": [
+                "ignore",
+                "rescore",
+                "oversampling"
+            ],
+            "_params": [
+                "hnsw_ef",
+                "exact",
+                "indexed_only",
+                "quantization"
+            ],
+            "_search": [
+                "vector",
+                "params",
+                "score_threshold"
+            ],
+            "_recommend": [
+                "positive",
+                "negative",
+                "params",
+                "score_threshold"
+            ],
+            "boolean": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "id",
+                "score",
+                "vector"
+            ],
+            "article": [
+                "arr",
+                "bool",
+                "float",
+                "int",
+                "string",
+                "id",
+                "score",
+                "vector"
+            ],
+            "user_nested_nestedAgain": [
+                "key1"
+            ],
+            "user_nested": [
+                "key1",
+                "key2",
+                "nestedAgain"
+            ],
+            "user": [
+                "nested",
+                "id",
+                "score",
+                "vector"
+            ]
+        },
+        "object_types": {
+            "_quantization": {
+                "description": "Quantization Parameters for Qdrant",
+                "fields": {
+                    "ignore": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "rescore": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "oversampling": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
+            "_params": {
+                "description": "Search parameters for Qdrant",
+                "fields": {
+                    "hnsw_ef": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "exact": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "indexed_only": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "quantization": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_quantization"
+                            }
+                        }
+                    }
+                }
+            },
+            "_search": {
+                "description": "Search the vector database for similar vectors",
+                "fields": {
+                    "vector": {
+                        "type": {
+                            "type": "array",
+                            "element_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "params": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_params"
+                            }
+                        }
+                    },
+                    "score_threshold": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
+            "_recommend": {
+                "description": "Provide an array of positive and negative example points and get a recommendation",
+                "fields": {
+                    "positive": {
+                        "type": {
+                            "type": "array",
+                            "element_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "negative": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Int"
+                                }
+                            }
+                        }
+                    },
+                    "params": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_params"
+                            }
+                        }
+                    },
+                    "score_threshold": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
+            "boolean": {
+                "description": null,
+                "fields": {
+                    "A": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "B": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "C": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "D": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "article": {
+                "description": null,
+                "fields": {
+                    "arr": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "nullable",
+                                    "underlying_type": {
+                                        "type": "named",
+                                        "name": "Int"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "bool": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "float": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "int": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "string": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "user_nested_nestedAgain": {
+                "description": null,
+                "fields": {
+                    "key1": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    }
+                }
+            },
+            "user_nested": {
+                "description": null,
+                "fields": {
+                    "key1": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "key2": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "nestedAgain": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "user_nested_nestedAgain"
+                        }
+                    }
+                }
+            },
+            "user": {
+                "description": null,
+                "fields": {
+                    "nested": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "user_nested"
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "functions": [],
+        "procedures": []
+    }
+}

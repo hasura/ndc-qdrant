@@ -1,5 +1,4 @@
-import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue } from "ts-connector-sdk/src/schemas";
-import { BadRequest, Conflict, NotSupported } from "ts-connector-sdk/src/index";
+import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "ts-connector-sdk/src/index";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
@@ -8,6 +7,10 @@ type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
 type ScrollRequest = components["schemas"]["ScrollRequest"];
 type RecommendRequest = components["schemas"]["RecommendRequest"];
+
+// TODO: Multi-Vector
+// Group By
+// With lookup
 
 export type QueryPlan = {
     collectionName: string;
@@ -26,6 +29,34 @@ type QueryCollection = {
     searchRequest: SearchRequest | null;
     scrollRequest: ScrollRequest | null;
     recomendRequest: RecommendRequest | null;
+};
+
+type SearchQuantization = {
+    ignore?: boolean; // false default
+    rescore?: boolean; // false default
+    oversampling?: number; 
+};
+
+type SearchParams = {
+    hnsw_ef?: number;
+    exact?: boolean; // false default
+    indexed_only?: boolean; // false default
+    quantization?: SearchQuantization
+};
+
+type SearchArguments = {
+    vector: number[];
+    vector_name?: string;
+    params?: SearchParams;
+    score_threshold?: number;
+};
+
+type RecommendArguments = {
+    positive: number[];
+    negative?: number[];
+    vector_name?: string;
+    params?: SearchParams;
+    score_threshold?: number;
 };
 
 // Helper function to determine if a value is a float
@@ -279,8 +310,6 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
  * 
  */
 async function collectQuery(query: QueryRequest,
-    vectorSearch: boolean,
-    recommendSearch: boolean,
     includedPayloadFields: string[],
     includeVector: boolean,
     varSet: VarSet | null): Promise<QueryCollection> {
@@ -293,17 +322,17 @@ async function collectQuery(query: QueryRequest,
     let searchRequest: SearchRequest | null = null;
     let scrollRequest: ScrollRequest | null = null;
     let recommendRequest: RecommendRequest | null = null;
-    if (vectorSearch) {
-        let v: number[] = [];
-        if (query.arguments.vector.type === "literal") {
-            v = query.arguments.vector.value as number[];
-        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
-            v = varSet[query.arguments.vector.name] as number[];
+    if (query.arguments.search) {
+        let searchArgs: SearchArguments;
+        if (query.arguments.search.type === "literal"){
+            searchArgs = query.arguments.search.value as SearchArguments;
+        } else if (query.arguments.search.type === "variable" && varSet !== null) {
+            searchArgs = varSet[query.arguments.search.name] as SearchArguments;
         } else {
-            throw new BadRequest("Failed to load vector, which must be a flat array of flaots", {});
+            throw new BadRequest("Unknown search argument type", {});
         }
         searchRequest = {
-            vector: v,
+            vector: searchArgs.vector,
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
@@ -311,37 +340,38 @@ async function collectQuery(query: QueryRequest,
             filter: filter,
             offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
             limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+        };
+        if (searchArgs.params){
+            searchRequest.params = searchArgs.params;
         }
-    } else if (recommendSearch) {
-        let positive: number[] = [];
-        let negative: number[] = [];
-        if (query.arguments.positive.type === "literal") {
-            positive = query.arguments.positive.value as number[];
-        } else if (query.arguments.positive.type === "variable" && varSet !== null) {
-            positive = varSet[query.arguments.positive.name] as number[];
+        if (searchArgs.score_threshold){
+            searchRequest.score_threshold = searchArgs.score_threshold;
+        }
+    } else if (query.arguments.recommend){
+        let recommendArgs: RecommendArguments;
+        if (query.arguments.recommend.type === "literal"){
+            recommendArgs = query.arguments.recommend.value as RecommendArguments;
+        } else if (query.arguments.recommend.type === "variable" && varSet !== null){
+            recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
         } else {
-            throw new BadRequest("Unknown Positive type provided", {});
-        }
-        if (query.arguments.negative !== undefined && query.arguments.negative !== null) {
-            if (query.arguments.negative.type === "literal") {
-                negative = query.arguments.negative.value as number[];
-            } else if (query.arguments.negative.type === "variable" && varSet !== null) {
-                negative = varSet[query.arguments.negative.name] as number[];
-            }
-        }
-        if (positive.length === 0) {
-            throw new BadRequest("Cannot get recommendation without providing positive context.", {});
+            throw new BadRequest("Unknown recommend argument type", {});
         }
         recommendRequest = {
-            positive: positive,
-            negative: negative,
+            positive: recommendArgs.positive,
             with_vector: includeVector,
-            with_payload: {
-                include: includedPayloadFields
-            },
-            filter: filter,
-            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
-            limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+            with_payload: {include: includedPayloadFields},
+        filter: filter,
+        offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+        limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+        }
+        if (recommendArgs.negative){
+            recommendRequest.negative = recommendArgs.negative;
+        }
+        if (recommendArgs.params){
+            recommendRequest.params = recommendArgs.params;
+        }
+        if (recommendArgs.score_threshold){
+            recommendRequest.score_threshold = recommendArgs.score_threshold;
         }
     } else {
         scrollRequest = {
@@ -492,30 +522,6 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     }
 
     const individualCollectionName: string = query.collection.slice(0, -1);
-    let vectorSearch: boolean = false;
-    let recommendSearch: boolean = false;
-    let args = Object.keys(query.arguments);
-    // Handle the argument collection
-    for (let arg of args) {
-        switch (arg) {
-            case "vector":
-                vectorSearch = true;
-                break;
-            case "positive":
-                recommendSearch = true;
-                break;
-            case "negative":
-                recommendSearch = true;
-                break;
-            default:
-                throw new BadRequest(`Argument ${arg} not implemented`, {});
-        }
-    }
-
-    if (vectorSearch && recommendSearch) {
-        throw new BadRequest("Cannot perform a vector search and use recommenders!", {});
-    }
-
     // Collect the payload fields to include in the response. 
     let includedPayloadFields: string[] = [];
     let orderedFields: string[] = [];
@@ -542,8 +548,6 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         // In the simplest case, we do not have any variables! So we will only have 1 request to make.
         queryResponse = await collectQuery(
             query,
-            vectorSearch,
-            recommendSearch,
             includedPayloadFields,
             includeVector,
             null
@@ -563,8 +567,6 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
             let vSet: VarSet = varSet;
             return collectQuery(
                 query,
-                vectorSearch,
-                recommendSearch,
                 includedPayloadFields,
                 includeVector,
                 vSet

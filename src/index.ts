@@ -8,9 +8,10 @@ import {
     MutationRequest,
     MutationResponse,
     CapabilitiesResponse,
-    ExplainResponse
-} from "ts-connector-sdk/src/schemas";
-import { start, Connector } from "ts-connector-sdk/src/index";
+    ExplainResponse,
+    start,
+    Connector
+} from "ts-connector-sdk/src/index";
 import { CAPABILITIES_RESPONSE } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
