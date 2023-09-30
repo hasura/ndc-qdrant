@@ -1,0 +1,57 @@
+{
+    "method": "POST",
+    "url": "query",
+    "request": {
+        "collection": "users",
+        "arguments": {},
+        "query": {
+            "fields": {
+                "id": {
+                    "type": "column",
+                    "column": "id"
+                },
+                "nested": {
+                    "type": "column",
+                    "column": "nested"
+                }
+            }
+        },
+        "collection_relationships": {}
+    },
+    "response": [
+        {
+          "rows": [
+            {
+              "id": 1,
+              "nested": {
+                "key1": 1,
+                "key2": "key two",
+                "nestedAgain": {
+                  "key1": 1
+                }
+              }
+            },
+            {
+              "id": 2,
+              "nested": {
+                "key1": 2,
+                "key2": "key two",
+                "nestedAgain": {
+                  "key1": 2
+                }
+              }
+            },
+            {
+              "id": 3,
+              "nested": {
+                "key1": 3,
+                "key2": "key two",
+                "nestedAgain": {
+                  "key1": 3
+                }
+              }
+            }
+          ]
+        }
+      ]
+}

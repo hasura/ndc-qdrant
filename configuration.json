@@ -7,6 +7,28 @@
             "users"
         ],
         "object_fields": {
+            "_quantization": [
+                "ignore",
+                "rescore",
+                "oversampling"
+            ],
+            "_params": [
+                "hnsw_ef",
+                "exact",
+                "indexed_only",
+                "quantization"
+            ],
+            "_search": [
+                "vector",
+                "params",
+                "score_threshold"
+            ],
+            "_recommend": [
+                "positive",
+                "negative",
+                "params",
+                "score_threshold"
+            ],
             "boolean": [
                 "A",
                 "B",
@@ -42,12 +64,160 @@
             ]
         },
         "object_types": {
+            "_quantization": {
+                "description": "Quantization Parameters for Qdrant",
+                "fields": {
+                    "ignore": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "rescore": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "oversampling": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
+            "_params": {
+                "description": "Search parameters for Qdrant",
+                "fields": {
+                    "hnsw_ef": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "exact": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "indexed_only": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Bool"
+                            }
+                        }
+                    },
+                    "quantization": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_quantization"
+                            }
+                        }
+                    }
+                }
+            },
+            "_search": {
+                "description": "Search the vector database for similar vectors",
+                "fields": {
+                    "vector": {
+                        "type": {
+                            "type": "array",
+                            "element_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "params": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_params"
+                            }
+                        }
+                    },
+                    "score_threshold": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
+            "_recommend": {
+                "description": "Provide an array of positive and negative example points and get a recommendation",
+                "fields": {
+                    "positive": {
+                        "type": {
+                            "type": "array",
+                            "element_type": {
+                                "type": "named",
+                                "name": "Int"
+                            }
+                        }
+                    },
+                    "negative": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Int"
+                                }
+                            }
+                        }
+                    },
+                    "params": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "_params"
+                            }
+                        }
+                    },
+                    "score_threshold": {
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    }
+                }
+            },
             "boolean": {
                 "description": null,
                 "fields": {
                     "A": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -58,7 +228,6 @@
                     },
                     "B": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -69,7 +238,6 @@
                     },
                     "C": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -80,7 +248,6 @@
                     },
                     "D": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -91,7 +258,6 @@
                     },
                     "id": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "named",
                             "name": "Int"
@@ -99,7 +265,6 @@
                     },
                     "score": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -110,7 +275,6 @@
                     },
                     "vector": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -129,7 +293,6 @@
                 "fields": {
                     "arr": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -146,7 +309,6 @@
                     },
                     "bool": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -157,7 +319,6 @@
                     },
                     "float": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -168,7 +329,6 @@
                     },
                     "int": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -179,7 +339,6 @@
                     },
                     "string": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -190,7 +349,6 @@
                     },
                     "id": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "named",
                             "name": "Int"
@@ -198,7 +356,6 @@
                     },
                     "score": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -209,7 +366,6 @@
                     },
                     "vector": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -228,7 +384,6 @@
                 "fields": {
                     "key1": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -237,15 +392,13 @@
                             }
                         }
                     }
-                },
-                "is_object": true
+                }
             },
             "user_nested": {
                 "description": null,
                 "fields": {
                     "key1": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -256,7 +409,6 @@
                     },
                     "key2": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -267,21 +419,18 @@
                     },
                     "nestedAgain": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "named",
                             "name": "user_nested_nestedAgain"
                         }
                     }
-                },
-                "is_object": true
+                }
             },
             "user": {
                 "description": null,
                 "fields": {
                     "nested": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "named",
                             "name": "user_nested"
@@ -289,7 +438,6 @@
                     },
                     "id": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "named",
                             "name": "Int"
@@ -297,7 +445,6 @@
                     },
                     "score": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {
@@ -308,7 +455,6 @@
                     },
                     "vector": {
                         "description": null,
-                        "arguments": {},
                         "type": {
                             "type": "nullable",
                             "underlying_type": {

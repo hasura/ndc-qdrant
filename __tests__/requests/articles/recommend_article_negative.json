@@ -4,17 +4,16 @@
     "request": {
         "collection": "articles",
         "arguments": {
-            "positive": {
+            "recommend": {
                 "type": "literal",
-                "value": [
-                    2
-                ]
-            },
-            "negative": {
-                "type": "literal",
-                "value": [
-                    1
-                ]
+                "value": {
+                    "positive": [
+                        2
+                    ],
+                    "negative": [
+                        1
+                    ]
+                }
             }
         },
         "query": {

@@ -1,4 +1,4 @@
-import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "ts-connector-sdk/src/schemas";
+import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "ts-connector-sdk/src/index";
 import { SCALAR_TYPES } from "../constants";
 
 export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
@@ -9,39 +9,21 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                 name: `${cn}s`,
                 description: null,
                 arguments: {
-                    vector: {
+                    search: {
                         type: {
                             type: "nullable",
                             underlying_type: {
-                                type: "array",
-                                element_type: {
-                                    type: "named",
-                                    name: "Float"
-                                }
+                                type: "named",
+                                name: "_search"
                             }
                         }
                     },
-                    positive: {
+                    recommend: {
                         type: {
                             type: "nullable",
                             underlying_type: {
-                                type: "array",
-                                element_type: {
-                                    type: "named",
-                                    name: "Int"
-                                }
-                            }
-                        }
-                    },
-                    negative: {
-                        type: {
-                            type: "nullable",
-                            underlying_type: {
-                                type: "array",
-                                element_type: {
-                                    type: "named",
-                                    name: "Int"
-                                }
+                                type: "named",
+                                name: "_recommend"
                             }
                         }
                     }
@@ -64,5 +46,6 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
         object_types: objectTypes,
         collections: collectionInfos
     };
+    console.log(JSON.stringify(schemaResponse));
     return schemaResponse;
 }

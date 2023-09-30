@@ -1,4 +1,4 @@
-import { ExplainResponse, QueryRequest } from "ts-connector-sdk/src/schemas";
+import { ExplainResponse, QueryRequest } from "ts-connector-sdk/src/index";
 import { QueryPlan, planQueries } from "./query";
 
 export async function doExplain(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<ExplainResponse>{

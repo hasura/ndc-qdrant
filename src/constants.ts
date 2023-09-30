@@ -1,4 +1,4 @@
-import { CapabilitiesResponse, ScalarType } from "ts-connector-sdk/src/schemas";
+import { CapabilitiesResponse, ScalarType } from "ts-connector-sdk/src/index";
 
 export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
     "versions": "^0.1.0",

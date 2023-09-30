@@ -9,7 +9,8 @@
                 "value": {
                   "vector": [
                     0.35, 0.08, 0.11, 0.44
-                ]
+                ],
+                "score_threshold": 0.9
               }
             }
         },
@@ -65,18 +66,6 @@
               ],
               "score": 0.9487021,
               "string": "Beijing",
-              "bool": false
-            },
-            {
-              "id": 2,
-              "vector": [
-                0.29041705,
-                0.44369268,
-                0.37915558,
-                0.75831115
-              ],
-              "score": 0.8860036,
-              "string": "Moscow",
               "bool": false
             }
           ]
