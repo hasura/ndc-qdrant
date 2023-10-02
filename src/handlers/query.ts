@@ -1,4 +1,4 @@
-import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "ts-connector-sdk/src/index";
+import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "ndc-sdk-typescript";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";

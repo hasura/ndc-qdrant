@@ -1,4 +1,4 @@
-import { ExplainResponse, QueryRequest } from "ts-connector-sdk/src/index";
+import { ExplainResponse, QueryRequest } from "ndc-sdk-typescript";
 import { QueryPlan, planQueries } from "./query";
 
 export async function doExplain(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<ExplainResponse>{
