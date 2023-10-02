@@ -10,8 +10,9 @@ import {
     CapabilitiesResponse,
     ExplainResponse,
     start,
-    Connector
-} from "ts-connector-sdk/src/index";
+    Connector,
+    InternalServerError
+} from "ndc-sdk-typescript";
 import { CAPABILITIES_RESPONSE } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
@@ -27,14 +28,12 @@ export interface ConfigurationSchema {
     procedures: ProcedureInfo[];
 }
 
-// TODO: Update config -> Store more here?
 export interface Configuration {
     qdrant_url: string;
     qdrant_api_key?: string;
-    config: ConfigurationSchema;
+    config?: ConfigurationSchema;
 }
 
-// JSON-schema generator package -> 
 export interface State { }
 
 const connector: Connector<Configuration, State> = {
@@ -100,7 +99,6 @@ const connector: Connector<Configuration, State> = {
     validate_raw_configuration(
         configuration: Configuration
     ): Promise<Configuration> {
-        // TODO -> Ensure that all object_types exist?
         return Promise.resolve(configuration);
     },
 
@@ -112,6 +110,9 @@ const connector: Connector<Configuration, State> = {
      * @param configuration
      */
     get_schema(configuration: Configuration): SchemaResponse {
+        if (!configuration.config){
+            throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
+        }
         return doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures);
     },
 
@@ -129,6 +130,9 @@ const connector: Connector<Configuration, State> = {
         _: State,
         request: QueryRequest
     ): Promise<ExplainResponse> {
+        if (!configuration.config){
+            throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
+        }
         return doExplain(request, configuration.config.collection_names, configuration.config.object_fields);
     },
 
@@ -146,6 +150,9 @@ const connector: Connector<Configuration, State> = {
         _: State,
         request: QueryRequest
     ): Promise<QueryResponse> {
+        if (!configuration.config){
+            throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
+        }
         return doQuery(
             request,
             configuration.config.collection_names,

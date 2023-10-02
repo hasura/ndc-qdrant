@@ -1,4 +1,4 @@
-import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "ts-connector-sdk/src/index";
+import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "ndc-sdk-typescript";
 import { SCALAR_TYPES } from "../constants";
 
 export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
