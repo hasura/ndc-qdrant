@@ -3,37 +3,39 @@
     "config": {
         "collection_names": [
             "booleans",
+            "text_recipes",
+            "multimodal_recipes",
             "articles",
-            "users"
+            "image_recipes"
         ],
         "object_fields": {
-            "_quantization": [
-                "ignore",
-                "rescore",
-                "oversampling"
-            ],
-            "_params": [
-                "hnsw_ef",
-                "exact",
-                "indexed_only",
-                "quantization"
-            ],
-            "_search": [
-                "vector",
-                "params",
-                "score_threshold"
-            ],
-            "_recommend": [
-                "positive",
-                "negative",
-                "params",
-                "score_threshold"
-            ],
             "boolean": [
                 "A",
                 "B",
                 "C",
                 "D",
+                "id",
+                "score",
+                "vector"
+            ],
+            "text_recipe": [
+                "image_name",
+                "ingredients",
+                "name",
+                "steps",
+                "vector_image",
+                "vector_text",
+                "id",
+                "score",
+                "vector"
+            ],
+            "multimodal_recipe": [
+                "image_name",
+                "ingredients",
+                "name",
+                "steps",
+                "vector_image",
+                "vector_text",
                 "id",
                 "score",
                 "vector"
@@ -48,171 +50,19 @@
                 "score",
                 "vector"
             ],
-            "user_nested_nestedAgain": [
-                "key1"
-            ],
-            "user_nested": [
-                "key1",
-                "key2",
-                "nestedAgain"
-            ],
-            "user": [
-                "nested",
+            "image_recipe": [
+                "image_name",
+                "ingredients",
+                "name",
+                "steps",
+                "vector_image",
+                "vector_text",
                 "id",
                 "score",
                 "vector"
             ]
         },
         "object_types": {
-            "_quantization": {
-                "description": "Quantization Parameters for Qdrant",
-                "fields": {
-                    "ignore": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Bool"
-                            }
-                        }
-                    },
-                    "rescore": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Bool"
-                            }
-                        }
-                    },
-                    "oversampling": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Float"
-                            }
-                        }
-                    }
-                }
-            },
-            "_params": {
-                "description": "Search parameters for Qdrant",
-                "fields": {
-                    "hnsw_ef": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Int"
-                            }
-                        }
-                    },
-                    "exact": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Bool"
-                            }
-                        }
-                    },
-                    "indexed_only": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Bool"
-                            }
-                        }
-                    },
-                    "quantization": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "_quantization"
-                            }
-                        }
-                    }
-                }
-            },
-            "_search": {
-                "description": "Search the vector database for similar vectors",
-                "fields": {
-                    "vector": {
-                        "type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "named",
-                                "name": "Float"
-                            }
-                        }
-                    },
-                    "params": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "_params"
-                            }
-                        }
-                    },
-                    "score_threshold": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Float"
-                            }
-                        }
-                    }
-                }
-            },
-            "_recommend": {
-                "description": "Provide an array of positive and negative example points and get a recommendation",
-                "fields": {
-                    "positive": {
-                        "type": {
-                            "type": "array",
-                            "element_type": {
-                                "type": "named",
-                                "name": "Int"
-                            }
-                        }
-                    },
-                    "negative": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "array",
-                                "element_type": {
-                                    "type": "named",
-                                    "name": "Int"
-                                }
-                            }
-                        }
-                    },
-                    "params": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "_params"
-                            }
-                        }
-                    },
-                    "score_threshold": {
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Float"
-                            }
-                        }
-                    }
-                }
-            },
             "boolean": {
                 "description": null,
                 "fields": {
@@ -253,6 +103,208 @@
                             "underlying_type": {
                                 "type": "named",
                                 "name": "Bool"
+                            }
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "text_recipe": {
+                "description": null,
+                "fields": {
+                    "image_name": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "ingredients": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "nullable",
+                                    "underlying_type": {
+                                        "type": "named",
+                                        "name": "String"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "name": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "steps": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_image": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_text": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "id": {
+                        "description": null,
+                        "type": {
+                            "type": "named",
+                            "name": "Int"
+                        }
+                    },
+                    "score": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "Float"
+                            }
+                        }
+                    },
+                    "vector": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "named",
+                                    "name": "Float"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "multimodal_recipe": {
+                "description": null,
+                "fields": {
+                    "image_name": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "ingredients": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "nullable",
+                                    "underlying_type": {
+                                        "type": "named",
+                                        "name": "String"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "name": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "steps": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_image": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_text": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
                             }
                         }
                     },
@@ -379,35 +431,10 @@
                     }
                 }
             },
-            "user_nested_nestedAgain": {
+            "image_recipe": {
                 "description": null,
                 "fields": {
-                    "key1": {
-                        "description": null,
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Int"
-                            }
-                        }
-                    }
-                }
-            },
-            "user_nested": {
-                "description": null,
-                "fields": {
-                    "key1": {
-                        "description": null,
-                        "type": {
-                            "type": "nullable",
-                            "underlying_type": {
-                                "type": "named",
-                                "name": "Int"
-                            }
-                        }
-                    },
-                    "key2": {
+                    "image_name": {
                         "description": null,
                         "type": {
                             "type": "nullable",
@@ -417,23 +444,60 @@
                             }
                         }
                     },
-                    "nestedAgain": {
+                    "ingredients": {
                         "description": null,
                         "type": {
-                            "type": "named",
-                            "name": "user_nested_nestedAgain"
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "array",
+                                "element_type": {
+                                    "type": "nullable",
+                                    "underlying_type": {
+                                        "type": "named",
+                                        "name": "String"
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-            },
-            "user": {
-                "description": null,
-                "fields": {
-                    "nested": {
+                    },
+                    "name": {
                         "description": null,
                         "type": {
-                            "type": "named",
-                            "name": "user_nested"
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "steps": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_image": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
+                        }
+                    },
+                    "vector_text": {
+                        "description": null,
+                        "type": {
+                            "type": "nullable",
+                            "underlying_type": {
+                                "type": "named",
+                                "name": "String"
+                            }
                         }
                     },
                     "id": {

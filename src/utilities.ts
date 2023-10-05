@@ -1,4 +1,4 @@
-import { ObjectType, ObjectField, Type } from "ndc-sdk-typescript";
+import { ObjectType, ObjectField, Type } from "@hasura/ndc-sdk-typescript";
 import { RESTRICTED_NAMES } from "./constants";
 
 const recursiveType = (val: any, namePrefix: string, objTypes: { [k: string]: ObjectType }): Type => {

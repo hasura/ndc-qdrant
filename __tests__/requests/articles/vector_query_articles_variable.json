@@ -4,9 +4,9 @@
     "request": {
         "collection": "articles",
         "arguments": {
-            "search": {
+            "vector": {
                 "type": "variable",
-                "name": "$search_data"
+                "name": "$vector_data"
             }
         },
         "query": {
@@ -37,24 +37,20 @@
         "collection_relationships": {},
         "variables": [
             {
-                "$search_data": {
-                    "vector": [
-                        1,
-                        2,
-                        3,
-                        4
-                    ]
-                }
+                "$vector_data": [
+                    1,
+                    2,
+                    3,
+                    4
+                ]
             },
             {
-                "$search_data": {
-                    "vector": [
-                        4,
-                        3,
-                        2,
-                        1
-                    ]
-                }
+                "$vector_data": [
+                    4,
+                    3,
+                    2,
+                    1
+                ]
             }
         ]
     },

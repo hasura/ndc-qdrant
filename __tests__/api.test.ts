@@ -35,7 +35,7 @@ describe('API Tests', () => {
     const testDirs: string[] = [
         path.resolve(baseDir, 'articles'),
         path.resolve(baseDir, 'booleans'),
-        path.resolve(baseDir, 'users'),
+        // path.resolve(baseDir, 'users'), GQL ENGINE DOES NOT SUPPORT YET!
     ];
 
     async function loadDataFromFile(filePath: string) {
