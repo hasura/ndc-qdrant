@@ -1,29 +1,79 @@
-import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "ndc-sdk-typescript";
+import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo } from "@hasura/ndc-sdk-typescript";
 import { SCALAR_TYPES } from "../constants";
 
 export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
     let collectionInfos: CollectionInfo[] = [];
     for (const cn of Object.keys(objectTypes)){
         if (collectionNames.includes(`${cn}s`)){
+            // collectionInfos.push({
+            //     name: `${cn}s`,
+            //     description: null,
+            //     arguments: {
+            //         search: {
+            //             type: {
+            //                 type: "nullable",
+            //                 underlying_type: {
+            //                     type: "named",
+            //                     name: "_search"
+            //                 }
+            //             }
+            //         },
+            //         recommend: {
+            //             type: {
+            //                 type: "nullable",
+            //                 underlying_type: {
+            //                     type: "named",
+            //                     name: "_recommend"
+            //                 }
+            //             }
+            //         }
+            //     },
+            //     type: cn,
+            //     deletable: false,
+            //     uniqueness_constraints: {
+            //         [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
+            //             unique_columns: ["id"]
+            //         }
+            //     },
+            //     foreign_keys: {}
+            // });
             collectionInfos.push({
                 name: `${cn}s`,
                 description: null,
                 arguments: {
-                    search: {
+                    vector: {
                         type: {
                             type: "nullable",
                             underlying_type: {
-                                type: "named",
-                                name: "_search"
+                                type: "array",
+                                element_type: {
+                                    type: "named",
+                                    name: "Float"
+                                }
                             }
                         }
                     },
-                    recommend: {
+                    positive: {
                         type: {
                             type: "nullable",
                             underlying_type: {
-                                type: "named",
-                                name: "_recommend"
+                                type: "array",
+                                element_type: {
+                                    type: "named",
+                                    name: "Int"
+                                }
+                            }
+                        }
+                    },
+                    negative: {
+                        type: {
+                            type: "nullable",
+                            underlying_type: {
+                                type: "array",
+                                element_type: {
+                                    type: "named",
+                                    name: "Int"
+                                }
                             }
                         }
                     }
@@ -46,6 +96,5 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
         object_types: objectTypes,
         collections: collectionInfos
     };
-    console.log(JSON.stringify(schemaResponse));
     return schemaResponse;
 }

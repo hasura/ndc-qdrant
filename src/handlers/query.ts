@@ -1,4 +1,4 @@
-import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "ndc-sdk-typescript";
+import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "@hasura/ndc-sdk-typescript";
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
@@ -322,12 +322,77 @@ async function collectQuery(query: QueryRequest,
     let searchRequest: SearchRequest | null = null;
     let scrollRequest: ScrollRequest | null = null;
     let recommendRequest: RecommendRequest | null = null;
-    if (query.arguments.search) {
-        let searchArgs: SearchArguments;
-        if (query.arguments.search.type === "literal"){
-            searchArgs = query.arguments.search.value as SearchArguments;
-        } else if (query.arguments.search.type === "variable" && varSet !== null) {
-            searchArgs = varSet[query.arguments.search.name] as SearchArguments;
+    // if (query.arguments.search) {
+    //     let searchArgs: SearchArguments;
+    //     if (query.arguments.search.type === "literal"){
+    //         searchArgs = query.arguments.search.value as SearchArguments;
+    //     } else if (query.arguments.search.type === "variable" && varSet !== null) {
+    //         searchArgs = varSet[query.arguments.search.name] as SearchArguments;
+    //     } else {
+    //         throw new BadRequest("Unknown search argument type", {});
+    //     }
+    //     searchRequest = {
+    //         vector: searchArgs.vector,
+    //         with_vector: includeVector,
+    //         with_payload: {
+    //             include: includedPayloadFields
+    //         },
+    //         filter: filter,
+    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     };
+    //     if (searchArgs.params){
+    //         searchRequest.params = searchArgs.params;
+    //     }
+    //     if (searchArgs.score_threshold){
+    //         searchRequest.score_threshold = searchArgs.score_threshold;
+    //     }
+    // } else if (query.arguments.recommend){
+    //     let recommendArgs: RecommendArguments;
+    //     if (query.arguments.recommend.type === "literal"){
+    //         recommendArgs = query.arguments.recommend.value as RecommendArguments;
+    //     } else if (query.arguments.recommend.type === "variable" && varSet !== null){
+    //         recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
+    //     } else {
+    //         throw new BadRequest("Unknown recommend argument type", {});
+    //     }
+    //     recommendRequest = {
+    //         positive: recommendArgs.positive,
+    //         with_vector: includeVector,
+    //         with_payload: {include: includedPayloadFields},
+    //     filter: filter,
+    //     offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //     limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     }
+    //     if (recommendArgs.negative){
+    //         recommendRequest.negative = recommendArgs.negative;
+    //     }
+    //     if (recommendArgs.params){
+    //         recommendRequest.params = recommendArgs.params;
+    //     }
+    //     if (recommendArgs.score_threshold){
+    //         recommendRequest.score_threshold = recommendArgs.score_threshold;
+    //     }
+    // } else {
+    //     scrollRequest = {
+    //         with_vector: includeVector,
+    //         with_payload: {
+    //             include: includedPayloadFields
+    //         },
+    //         filter: filter,
+    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     }
+    // }
+
+    if (query.arguments.vector) {
+        let searchArgs: SearchArguments = {
+            vector: []
+        };
+        if (query.arguments.vector.type === "literal"){
+            searchArgs.vector = query.arguments.vector.value as number[]
+        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
+            searchArgs.vector = varSet[query.arguments.vector.name] as number[]
         } else {
             throw new BadRequest("Unknown search argument type", {});
         }
@@ -347,17 +412,30 @@ async function collectQuery(query: QueryRequest,
         if (searchArgs.score_threshold){
             searchRequest.score_threshold = searchArgs.score_threshold;
         }
-    } else if (query.arguments.recommend){
-        let recommendArgs: RecommendArguments;
-        if (query.arguments.recommend.type === "literal"){
-            recommendArgs = query.arguments.recommend.value as RecommendArguments;
-        } else if (query.arguments.recommend.type === "variable" && varSet !== null){
-            recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
+    } else if (query.arguments.positive){
+        let recommendArgs: RecommendArguments = {
+            positive: []
+        };
+        if (query.arguments.positive.type === "literal") {
+            recommendArgs.positive = query.arguments.positive.value as number[];
+        } else if (query.arguments.positive.type === "variable" && varSet !== null) {
+            recommendArgs.positive = varSet[query.arguments.positive.name] as number[];
         } else {
-            throw new BadRequest("Unknown recommend argument type", {});
+            throw new BadRequest("Unknown positive argument type", {});
+        }
+
+        if (query.arguments.negative) {
+            if (query.arguments.negative.type === "literal") {
+                recommendArgs.negative = query.arguments.negative.value as number[];
+            } else if (query.arguments.negative.type === "variable" && varSet !== null) {
+                recommendArgs.negative = varSet[query.arguments.negative.name] as number[];
+            } else {
+                throw new BadRequest("Unknown negative argument type", {});
+            }
         }
         recommendRequest = {
             positive: recommendArgs.positive,
+            negative: recommendArgs.negative,
             with_vector: includeVector,
             with_payload: {include: includedPayloadFields},
         filter: filter,

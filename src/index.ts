@@ -12,8 +12,8 @@ import {
     start,
     Connector,
     InternalServerError
-} from "ndc-sdk-typescript";
-import { CAPABILITIES_RESPONSE } from "./constants";
+} from "@hasura/ndc-sdk-typescript";
+import { CAPABILITIES_RESPONSE, CONFIGURATION_SCHEMA } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
 import { doGetSchema } from "./handlers/schema";
@@ -70,7 +70,7 @@ const connector: Connector<Configuration, State> = {
    * Return jsonschema for the configuration for this connector
    */
     get_configuration_schema(): JSONSchemaObject {
-        return {};
+        return CONFIGURATION_SCHEMA;
     },
 
     make_empty_configuration(): Configuration {

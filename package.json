@@ -7,20 +7,19 @@
     "start-server": "ts-node ./src/index.ts configuration serve",
     "test": "jest",
     "generate-config": "ts-node generate-config.ts --url http://localhost:6333 --output type_stubs.json",
-    "import-data": "ts-node import-data --file __tests__/data/data.json --url http://localhost:6333",
-    "postinstall": "cd node_modules/ndc-sdk-typescript && npm install --ignore-scripts && npm run build"
+    "import-data": "ts-node import-data --file __tests__/data/data.json --url http://localhost:6333"
   },
   "dependencies": {
+    "@hasura/ndc-sdk-typescript": "^1.0.0",
+    "@json-schema-tools/meta-schema": "^1.7.0",
     "@qdrant/js-client-rest": "^1.5.0",
     "@types/node": "^20.6.0",
     "commander": "^11.0.0",
     "fastify": "^4.23.2",
     "json-schema-to-ts": "^2.9.2",
     "json-schema-to-typescript": "^13.1.1",
-    "ndc-sdk-typescript": "github:hasura/ndc-sdk-typescript",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2",
-    "@json-schema-tools/meta-schema": "^1.7.0"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.3",

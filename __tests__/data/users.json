@@ -1,0 +1,49 @@
+{
+    "user": [
+        {
+            "id": 1,
+            "vector": [
+                1
+            ],
+            "payload": {
+                "nested": {
+                    "key1": 1,
+                    "key2": "key two",
+                    "nestedAgain": {
+                        "key1": 1
+                    }
+                }
+            }
+        },
+        {
+            "id": 2,
+            "vector": [
+                2
+            ],
+            "payload": {
+                "nested": {
+                    "key1": 2,
+                    "key2": "key two",
+                    "nestedAgain": {
+                        "key1": 2
+                    }
+                }
+            }
+        },
+        {
+            "id": 3,
+            "vector": [
+                3
+            ],
+            "payload": {
+                "nested": {
+                    "key1": 3,
+                    "key2": "key two",
+                    "nestedAgain": {
+                        "key1": 3
+                    }
+                }
+            }
+        }
+    ]
+}

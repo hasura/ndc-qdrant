@@ -1,4 +1,4 @@
-import { ExplainResponse, QueryRequest } from "ndc-sdk-typescript";
+import { ExplainResponse, QueryRequest } from "@hasura/ndc-sdk-typescript";
 import { QueryPlan, planQueries } from "./query";
 
 export async function doExplain(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<ExplainResponse>{
@@ -11,7 +11,7 @@ export async function doExplain(query: QueryRequest, collectionNames: string[], 
             queryPlan: JSON.stringify(queryPlan),
             scrollsRows: isScroll ? "Query will scroll over rows": "Query will vector search rows",
             concurrentQueriesRan: `${queryPlan.scrollQueries.length}`,
-            batchedQueriesRan: `${queryPlan.searchQueries.length}`
+            batchedQueriesRan: `${queryPlan.searchQueries.length + queryPlan.recommendQueries.length}`
         }}
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e); 

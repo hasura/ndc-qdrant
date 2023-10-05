@@ -4,13 +4,11 @@
     "request": {
         "collection": "articles",
         "arguments": {
-            "recommend": {
+            "positive": {
                 "type": "literal",
-                "value": {
-                    "positive": [
-                        1
-                    ]
-                }
+                "value": [
+                    1
+                ]
             }
         },
         "query": {
