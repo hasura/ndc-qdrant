@@ -109,11 +109,11 @@ const connector: Connector<Configuration, State> = {
      * from the NDC specification.
      * @param configuration
      */
-    get_schema(configuration: Configuration): SchemaResponse {
+    async get_schema(configuration: Configuration): Promise<SchemaResponse> {
         if (!configuration.config){
             throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
         }
-        return doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures);
+        return Promise.resolve(doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures));
     },
 
     /**
