@@ -19,6 +19,7 @@ import { doExplain } from "./handlers/explain";
 import { doGetSchema } from "./handlers/schema";
 import { doUpdateConfiguration } from "./handlers/updateConfiguration";
 import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
+console.info("INDEX ENTRYPOINT");
 
 export interface ConfigurationSchema {
     collection_names: string[];
@@ -52,6 +53,7 @@ const connector: Connector<Configuration, State> = {
         _: Configuration,
         __: unknown
     ): Promise<State> {
+        console.info("INIT STATE CALLED");
         return Promise.resolve({});
     },
 
@@ -63,6 +65,7 @@ const connector: Connector<Configuration, State> = {
      * @param configuration
      */
     get_capabilities(_: Configuration): CapabilitiesResponse {
+        console.info("GIVING CAPABILITIES");
         return CAPABILITIES_RESPONSE;
     },
 
@@ -70,10 +73,12 @@ const connector: Connector<Configuration, State> = {
    * Return jsonschema for the configuration for this connector
    */
     get_configuration_schema(): JSONSchemaObject {
+        console.info("GIVING CONFIGURATION SCHEMA");
         return CONFIGURATION_SCHEMA;
     },
 
     make_empty_configuration(): Configuration {
+        console.info("MAKING EMPTY CONFIGURATION");
         const conf: Configuration = {
             qdrant_url: "",
             config: {
@@ -88,6 +93,7 @@ const connector: Connector<Configuration, State> = {
     },
 
     update_configuration(configuration: Configuration): Promise<Configuration> {
+        console.info("UPDATING CONFIGURATION");
         return doUpdateConfiguration(configuration);
     },
 
@@ -99,6 +105,7 @@ const connector: Connector<Configuration, State> = {
     validate_raw_configuration(
         configuration: Configuration
     ): Promise<Configuration> {
+        console.info("VALIDATING CONFIGURATION NOT IMPLEMENTED YET");
         return Promise.resolve(configuration);
     },
 
@@ -113,6 +120,7 @@ const connector: Connector<Configuration, State> = {
         if (!configuration.config){
             throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
         }
+        console.info("GIVING SCHEMA");
         return Promise.resolve(doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures));
     },
 
@@ -150,15 +158,24 @@ const connector: Connector<Configuration, State> = {
         _: State,
         request: QueryRequest
     ): Promise<QueryResponse> {
+        console.info("QUERY ENTRY");
         if (!configuration.config){
             throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
         }
-        return doQuery(
-            request,
-            configuration.config.collection_names,
-            configuration.config.object_fields,
-            configuration.qdrant_url,
-            configuration.qdrant_api_key);
+        console.info(request);
+        try {
+            let res = doQuery(
+                request,
+                configuration.config.collection_names,
+                configuration.config.object_fields,
+                configuration.qdrant_url,
+                configuration.qdrant_api_key);
+            console.info(res);
+            return res;
+        } catch (e) {
+            console.info(e);
+            throw new Error("Unexpected Error");
+        }
     },
 
     /**
@@ -205,6 +222,7 @@ const connector: Connector<Configuration, State> = {
     health_check(_: Configuration, __: State): Promise<undefined> {
         // TODO
         // https://qdrant.github.io/qdrant/redoc/index.html#tag/service/operation/healthz
+        console.info("HEALTH-CHECKING");
         return Promise.resolve(undefined);
     },
 
