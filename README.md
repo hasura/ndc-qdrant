@@ -4,27 +4,21 @@ Running the connector
 
 ```shell
 npm install
-npm start
+ts-node ./src/index.ts serve --configuration=config.json
 ```
 
-## Running the tests:
+## Generating the config:
+
+If you have Qdrant running locally:
 
 ```shell
-npm test
-```
-
-## Generating the object_types and collections:
-
-```shell
-npm run generate-config --url http://localhost:6333 --output output_file.json
+ts-node generate-config.ts --url http://localhost:6333 --output config_local.json
 ```
 
 Optional parameter --key to pass API key if using Qdrant cloud
 
-## Importing test data
+Example Usage:
 
 ```shell
-npm run import-data --url http://localhost:6333 --file=__tests__/data/data.json
+ts-node generate-config.ts --url https://28263b36-###.us-east4-0.gcp.cloud.qdrant.io --key secret-key --output config.json
 ```
-
-Optional parameter --key to pass API key if using Qdrant cloud

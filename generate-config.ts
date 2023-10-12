@@ -7,7 +7,7 @@ import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES } from "./src/constants";
 const writeFile = promisify(fs.writeFile);
 
 const DEFAULT_URL = "http://localhost:6333";
-const DEFAULT_OUTPUT_FILENAME = "configuration.json";
+const DEFAULT_OUTPUT_FILENAME = "config.json";
 
 const args = process.argv.slice(2);
 let clientUrl = DEFAULT_URL;
@@ -34,10 +34,11 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-let client = getQdrantClient(clientUrl);
+let client = getQdrantClient(clientUrl, apiKey);
 
 async function main() {
   const collections = await client.getCollections();
+  console.log(collections);
   const collectionNames = collections.collections.map((c) => c.name);
   const pluralCollectionNames = collectionNames.map((i) => i + "s");
 
@@ -74,18 +75,18 @@ async function main() {
   console.log(`Writing object_types and collections to ${outputFileName}`);
   let res: any = {
     qdrant_url: clientUrl,
-    config: {
-      collection_names: pluralCollectionNames,
-      object_fields: objectFields,
-      object_types: objectTypes,
-      functions: [],
-      procedures: [],
-    },
   };
   if (apiKey) {
     res["qdrant_api_key"] = apiKey;
   }
-  await writeFile(outputFileName, JSON.stringify(res));
+  res["config"] = {
+    collection_names: pluralCollectionNames,
+    object_fields: objectFields,
+    object_types: objectTypes,
+    functions: [],
+    procedures: [],
+  }
+  await writeFile(outputFileName, JSON.stringify(res, null, 4));
 }
 
 main();

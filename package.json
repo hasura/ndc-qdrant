@@ -6,7 +6,6 @@
     "start": "ts-node ./src/index.ts serve --configuration=configuration.json",
     "start-server": "ts-node ./src/index.ts configuration serve",
     "test": "jest",
-    "generate-config": "ts-node generate-config.ts --url http://localhost:6333 --output type_stubs.json",
     "import-data": "ts-node import-data --file __tests__/data/data.json --url http://localhost:6333"
   },
   "dependencies": {
