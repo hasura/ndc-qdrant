@@ -33,7 +33,7 @@ RUN npm ci --only=production
 COPY --from=build-stage /usr/src/app/dist ./dist
 
 # Copy configuration file for your Fastify API
-COPY configuration.json ./
+COPY config.json ./
 
 EXPOSE 8100
 
