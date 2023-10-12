@@ -589,11 +589,6 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         throw new NotSupported("Querying with collection relationships not implemented yet!", {});
     }
 
-    // TODO: EMPTY FIELDS NOT IMPLEMENTED
-    if (query.query.fields === null || Object.keys(query.query.fields!).length === 0) {
-        throw new NotSupported("Querying with null fields not implemented yet!", {});
-    }
-
     // Sorting not supported by database!
     if (query.query.order_by !== undefined && query.query.order_by !== null) {
         throw new NotSupported("Order by not implemented", {});
@@ -604,16 +599,18 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     let includedPayloadFields: string[] = [];
     let orderedFields: string[] = [];
     let includeVector: boolean = false;
-    for (const f in query.query.fields) {
-        if (f === "vector") {
-            includeVector = true;
-        } else if (!collectionFields[individualCollectionName].includes(f)) {
-            throw new BadRequest("Requested field not in schema!", {});
-        } else {
-            includedPayloadFields.push(f);
+    if (query.query.fields !== null && query.query.fields !== undefined){
+        for (const f in query.query.fields) {
+            if (f === "vector") {
+                includeVector = true;
+            } else if (!collectionFields[individualCollectionName].includes(f)) {
+                throw new BadRequest("Requested field not in schema!", {});
+            } else {
+                includedPayloadFields.push(f);
+            }
+            // Hasura needs to maintain field ordering, so I would think the connector will as well?
+            orderedFields.push(f);
         }
-        // Hasura needs to maintain field ordering, so I would think the connector will as well?
-        orderedFields.push(f);
     }
 
     // Here we collect all the queries we might want to make.
@@ -776,11 +773,15 @@ export async function performQueries(
             for (let undef of queryPlan.dropAggregateRows) {
                 delete row[undef]
             }
-            rows.push(row);
+            if (Object.keys(row).length > 0){
+                rows.push(row);
+            }
         }
-        rowSet.rows = rows as {
-            [k: string]: RowFieldValue;
-        }[];
+        if (rows.length > 0){
+            rowSet.rows = rows as {
+                [k: string]: RowFieldValue;
+            }[];
+        }
         if (Object.keys(aggResults).length > 0) {
             rowSet.aggregates = aggResults;
         }

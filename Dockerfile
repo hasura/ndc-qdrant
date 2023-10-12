@@ -32,10 +32,7 @@ RUN npm ci --only=production
 # Copy compiled JavaScript from the previous stage
 COPY --from=build-stage /usr/src/app/dist ./dist
 
-# Copy configuration file for your Fastify API
-COPY config.json ./
-
 EXPOSE 8100
 
 # Define the command to run the app using CMD
-CMD ["node", "./dist/src/index.js", "serve", "--configuration=config.json"]
+CMD ["node", "./dist/src/index.js", "serve", "--configuration=/etc/connector/config.json"]
