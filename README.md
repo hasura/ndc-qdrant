@@ -28,9 +28,9 @@ To deploy a connector and use it in a Hasura V3 project, follow these steps:
 
     When running this script specify:
 
-    --url The URL where Qdrant is hosted, if you are running Qdrant locally this might be http://localhost:6333
+    --url The URL where Qdrant is hosted
 
-    --key The API key for connecting the the Qdrant Client. This optional param should be used if you are hosting Qdrant in Qdrant cloud
+    --key The API key for connecting the the Qdrant Client.
 
     --output The name of the file to store the configuration in
 
@@ -42,7 +42,7 @@ To deploy a connector and use it in a Hasura V3 project, follow these steps:
 
     ```ts-node ./src/index.ts configuration serve```
 
-    You can then send a CURL request specifying the qdrant_url and (optionally) qdrant_api_key to get the configuration file.
+    You can then send a CURL request specifying the qdrant_url and qdrant_api_key to get the configuration file.
 
     Example:
 
@@ -146,3 +146,5 @@ These will allow you to perform vector searches, or to get recommendations.
 You can pass in a search vector to the vector parameter, which is a flat list of floats. This will typically be the output from some embedding model, and it will return results ordered by closest match. You'll likely want to ensure that you are passing a limit on all your queries.
 
 You can also pass in an array of ID's to the positive and negative parameters to provide example data-points. This is an easy way to get recommendations without having to manage or deal with passing around entire vectors. If you know the ID of some positive and negative data-points, you can simply pass the ID's. You must provide at least 1 positive example when using this. You can provide a list of positive examples, a list of positive and a list of negative, but you cannot provide only a list of negative examples.
+
+You can read more about these parameters [here](https://qdrant.tech/documentation/concepts/search/)
