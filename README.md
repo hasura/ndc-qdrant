@@ -20,27 +20,42 @@ It is recommended that you:
 To deploy a connector and use it in a Hasura V3 project, follow these steps:
 
 1. Create a Hasura V3 project (or use an existing project)
+
 2. Generate a configuration file for your Qdrant Database, there are 2 ways to get the configuration file.
+
     First you'll need to clone this repo, and run ```npm install```
     i. The easiest way to generate a configuration file is to run the generate-config script using ts-node. 
+
     When running this script specify:
+
     --url The URL where Qdrant is hosted, if you are running Qdrant locally this might be http://localhost:6333
+
     --key The API key for connecting the the Qdrant Client. This optional param should be used if you are hosting Qdrant in Qdrant cloud
+
     --output The name of the file to store the configuration in
+
     Example Usage:
+
     ```ts-node generate-config --url https://qdrant-url --key QdrantApiKey --output config.json```
     
     ii. You can also run the connector in configuration mode and generate the config file using CURL.
+
     ```ts-node ./src/index.ts configuration serve```
+
     You can then send a CURL request specifying the qdrant_url and (optionally) qdrant_api_key to get the configuration file.
+
     Example:
+
     ```curl -X POST -H "Content-Type: application/json" -d '{"qdrant_url": "https://link-to-qdrant.cloud.qdrant.io", "qdrant_api_key": "QdrantApiKey"}' http://localhost:9100 > config.json```
+
 3. Once you have a configuration file, you can deploy the connector onto Hasura Cloud
 
 Ensure you are logged in to Hasura CLI
+
 ```hasura3 cloud login --pat 'YOUR-HASURA-TOKEN'```
 
 From there, you can deploy the connector:
+
 ```hasura3 connector create qdrant:v1 --github-repo-url https://github.com/hasura/ndc-qdrant/tree/main --config-file ./config.json```
 
 ## Usage
