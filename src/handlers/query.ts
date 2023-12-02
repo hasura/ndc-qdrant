@@ -720,7 +720,9 @@ export async function performQueries(
                     } else {
                         if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)) {
                             // These rows are explicitly nullable, and in this case, are null! I.e. User requested the field, and in this row it's null
-                            row[rowField] = null;
+                            if (!rowField.startsWith("__hasura_phantom_field__")){
+                                row[rowField] = null;
+                            }
                         } else if (p.payload !== undefined && p.payload !== null) {
                             row[rowField] = p.payload[rowField] as RowFieldValue;
                         } else {
@@ -765,7 +767,6 @@ export async function performQueries(
  * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
 export async function doQuery(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }, qdrantUrl: string, qdrantApiKey?: string): Promise<QueryResponse> {
-    console.log(JSON.stringify(query));
     let queryPlan = await planQueries(query, collectionNames, collectionFields);
     return await performQueries(
         query,
