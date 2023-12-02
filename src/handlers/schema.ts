@@ -36,8 +36,6 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                 },
                 foreign_keys: {}
             });
-
-            // collectionInfos.push({
             //     name: cn,
             //     description: null,
             //     arguments: {
