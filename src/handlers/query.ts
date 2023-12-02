@@ -322,77 +322,12 @@ async function collectQuery(query: QueryRequest,
     let searchRequest: SearchRequest | null = null;
     let scrollRequest: ScrollRequest | null = null;
     let recommendRequest: RecommendRequest | null = null;
-    // if (query.arguments.search) {
-    //     let searchArgs: SearchArguments;
-    //     if (query.arguments.search.type === "literal"){
-    //         searchArgs = query.arguments.search.value as SearchArguments;
-    //     } else if (query.arguments.search.type === "variable" && varSet !== null) {
-    //         searchArgs = varSet[query.arguments.search.name] as SearchArguments;
-    //     } else {
-    //         throw new BadRequest("Unknown search argument type", {});
-    //     }
-    //     searchRequest = {
-    //         vector: searchArgs.vector,
-    //         with_vector: includeVector,
-    //         with_payload: {
-    //             include: includedPayloadFields
-    //         },
-    //         filter: filter,
-    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
-    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
-    //     };
-    //     if (searchArgs.params){
-    //         searchRequest.params = searchArgs.params;
-    //     }
-    //     if (searchArgs.score_threshold){
-    //         searchRequest.score_threshold = searchArgs.score_threshold;
-    //     }
-    // } else if (query.arguments.recommend){
-    //     let recommendArgs: RecommendArguments;
-    //     if (query.arguments.recommend.type === "literal"){
-    //         recommendArgs = query.arguments.recommend.value as RecommendArguments;
-    //     } else if (query.arguments.recommend.type === "variable" && varSet !== null){
-    //         recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
-    //     } else {
-    //         throw new BadRequest("Unknown recommend argument type", {});
-    //     }
-    //     recommendRequest = {
-    //         positive: recommendArgs.positive,
-    //         with_vector: includeVector,
-    //         with_payload: {include: includedPayloadFields},
-    //     filter: filter,
-    //     offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
-    //     limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
-    //     }
-    //     if (recommendArgs.negative){
-    //         recommendRequest.negative = recommendArgs.negative;
-    //     }
-    //     if (recommendArgs.params){
-    //         recommendRequest.params = recommendArgs.params;
-    //     }
-    //     if (recommendArgs.score_threshold){
-    //         recommendRequest.score_threshold = recommendArgs.score_threshold;
-    //     }
-    // } else {
-    //     scrollRequest = {
-    //         with_vector: includeVector,
-    //         with_payload: {
-    //             include: includedPayloadFields
-    //         },
-    //         filter: filter,
-    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
-    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
-    //     }
-    // }
-
-    if (query.arguments.vector) {
-        let searchArgs: SearchArguments = {
-            vector: []
-        };
-        if (query.arguments.vector.type === "literal"){
-            searchArgs.vector = query.arguments.vector.value as number[]
-        } else if (query.arguments.vector.type === "variable" && varSet !== null) {
-            searchArgs.vector = varSet[query.arguments.vector.name] as number[]
+    if (query.arguments.search) {
+        let searchArgs: SearchArguments;
+        if (query.arguments.search.type === "literal"){
+            searchArgs = query.arguments.search.value as SearchArguments;
+        } else if (query.arguments.search.type === "variable" && varSet !== null) {
+            searchArgs = varSet[query.arguments.search.name] as SearchArguments;
         } else {
             throw new BadRequest("Unknown search argument type", {});
         }
@@ -412,30 +347,17 @@ async function collectQuery(query: QueryRequest,
         if (searchArgs.score_threshold){
             searchRequest.score_threshold = searchArgs.score_threshold;
         }
-    } else if (query.arguments.positive){
-        let recommendArgs: RecommendArguments = {
-            positive: []
-        };
-        if (query.arguments.positive.type === "literal") {
-            recommendArgs.positive = query.arguments.positive.value as number[];
-        } else if (query.arguments.positive.type === "variable" && varSet !== null) {
-            recommendArgs.positive = varSet[query.arguments.positive.name] as number[];
+    } else if (query.arguments.recommend){
+        let recommendArgs: RecommendArguments;
+        if (query.arguments.recommend.type === "literal"){
+            recommendArgs = query.arguments.recommend.value as RecommendArguments;
+        } else if (query.arguments.recommend.type === "variable" && varSet !== null){
+            recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
         } else {
-            throw new BadRequest("Unknown positive argument type", {});
-        }
-
-        if (query.arguments.negative) {
-            if (query.arguments.negative.type === "literal") {
-                recommendArgs.negative = query.arguments.negative.value as number[];
-            } else if (query.arguments.negative.type === "variable" && varSet !== null) {
-                recommendArgs.negative = varSet[query.arguments.negative.name] as number[];
-            } else {
-                throw new BadRequest("Unknown negative argument type", {});
-            }
+            throw new BadRequest("Unknown recommend argument type", {});
         }
         recommendRequest = {
             positive: recommendArgs.positive,
-            negative: recommendArgs.negative,
             with_vector: includeVector,
             with_payload: {include: includedPayloadFields},
         filter: filter,
@@ -462,6 +384,84 @@ async function collectQuery(query: QueryRequest,
             limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
         }
     }
+
+    // if (query.arguments.vector) {
+    //     let searchArgs: SearchArguments = {
+    //         vector: []
+    //     };
+    //     if (query.arguments.vector.type === "literal"){
+    //         searchArgs.vector = query.arguments.vector.value as number[]
+    //     } else if (query.arguments.vector.type === "variable" && varSet !== null) {
+    //         searchArgs.vector = varSet[query.arguments.vector.name] as number[]
+    //     } else {
+    //         throw new BadRequest("Unknown search argument type", {});
+    //     }
+    //     searchRequest = {
+    //         vector: searchArgs.vector,
+    //         with_vector: includeVector,
+    //         with_payload: {
+    //             include: includedPayloadFields
+    //         },
+    //         filter: filter,
+    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     };
+    //     if (searchArgs.params){
+    //         searchRequest.params = searchArgs.params;
+    //     }
+    //     if (searchArgs.score_threshold){
+    //         searchRequest.score_threshold = searchArgs.score_threshold;
+    //     }
+    // } else if (query.arguments.positive){
+    //     let recommendArgs: RecommendArguments = {
+    //         positive: []
+    //     };
+    //     if (query.arguments.positive.type === "literal") {
+    //         recommendArgs.positive = query.arguments.positive.value as number[];
+    //     } else if (query.arguments.positive.type === "variable" && varSet !== null) {
+    //         recommendArgs.positive = varSet[query.arguments.positive.name] as number[];
+    //     } else {
+    //         throw new BadRequest("Unknown positive argument type", {});
+    //     }
+
+    //     if (query.arguments.negative) {
+    //         if (query.arguments.negative.type === "literal") {
+    //             recommendArgs.negative = query.arguments.negative.value as number[];
+    //         } else if (query.arguments.negative.type === "variable" && varSet !== null) {
+    //             recommendArgs.negative = varSet[query.arguments.negative.name] as number[];
+    //         } else {
+    //             throw new BadRequest("Unknown negative argument type", {});
+    //         }
+    //     }
+    //     recommendRequest = {
+    //         positive: recommendArgs.positive,
+    //         negative: recommendArgs.negative,
+    //         with_vector: includeVector,
+    //         with_payload: {include: includedPayloadFields},
+    //     filter: filter,
+    //     offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //     limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     }
+    //     if (recommendArgs.negative){
+    //         recommendRequest.negative = recommendArgs.negative;
+    //     }
+    //     if (recommendArgs.params){
+    //         recommendRequest.params = recommendArgs.params;
+    //     }
+    //     if (recommendArgs.score_threshold){
+    //         recommendRequest.score_threshold = recommendArgs.score_threshold;
+    //     }
+    // } else {
+    //     scrollRequest = {
+    //         with_vector: includeVector,
+    //         with_payload: {
+    //             include: includedPayloadFields
+    //         },
+    //         filter: filter,
+    //         offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+    //         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
+    //     }
+    // }
 
     if (searchRequest === null && scrollRequest === null && recommendRequest === null) {
         throw new BadRequest("Must supply a search/scroll/reccomend request.", {});
@@ -494,7 +494,7 @@ async function collectQuery(query: QueryRequest,
  *   const aggResult = rowAggregate(accumulatedAggs, aggVariables, myQuery, singleRow, totalRows);
  * 
  */
-function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: string]: any }, query: QueryRequest, row: RowFieldValue, numRows: number): { [key: string]: any } {
+function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: string]: any }, query: QueryRequest, row: any, numRows: number): { [key: string]: any } {
     if (query.query.aggregates !== undefined && query.query.aggregates !== null) {
         for (let [key, agg] of Object.entries(query.query.aggregates)) {
             switch (agg.type) {
@@ -594,22 +594,25 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         throw new NotSupported("Order by not implemented", {});
     }
 
-    const individualCollectionName: string = query.collection.slice(0, -1);
     // Collect the payload fields to include in the response. 
     let includedPayloadFields: string[] = [];
     let orderedFields: string[] = [];
     let includeVector: boolean = false;
     if (query.query.fields !== null && query.query.fields !== undefined){
-        for (const f in query.query.fields) {
-            if (f === "vector") {
-                includeVector = true;
-            } else if (!collectionFields[individualCollectionName].includes(f)) {
-                throw new BadRequest("Requested field not in schema!", {});
-            } else {
-                includedPayloadFields.push(f);
+        for (const [fieldName, fieldDetails] of Object.entries(query.query.fields)) {
+            if (fieldDetails.type === "column"){
+                if (fieldName === "vector") {
+                    includeVector = true;
+                } else if (!collectionFields[query.collection].includes(fieldName)) {
+                    throw new BadRequest(`Requested field ${fieldName} not in schema!`, {});
+                } else {
+                    includedPayloadFields.push(fieldName);
+                }
+                // Hasura needs to maintain field ordering, so I would think the connector will as well?
+                orderedFields.push(fieldName);
+            } else if (fieldDetails.type === "relationship"){
+                console.log("Remote relationship handle?");
             }
-            // Hasura needs to maintain field ordering, so I would think the connector will as well?
-            orderedFields.push(f);
         }
     }
 
@@ -675,7 +678,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         }
     };
     return {
-        collectionName: individualCollectionName,
+        collectionName: query.collection,
         scrollQueries: scrollQueries,
         searchQueries: searchQueries,
         recommendQueries: recommendQueries,
@@ -748,7 +751,7 @@ export async function performQueries(
         let aggResults: { [key: string]: any } = {};
         let aggVars: { [key: string]: any } = {};
         for (let p of result) {
-            let row: RowFieldValue = {};
+            let row: any = {};
             for (let rowField of queryPlan.orderedFields) {
                 if (rowField === "id") {
                     row.id = p.id;

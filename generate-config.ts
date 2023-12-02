@@ -40,7 +40,6 @@ async function main() {
   const collections = await client.getCollections();
   console.log(collections);
   const collectionNames = collections.collections.map((c) => c.name);
-  const pluralCollectionNames = collectionNames.map((i) => i + "s");
 
   let objectTypes: Record<string, any> = {
     ...BASE_TYPES,
@@ -80,7 +79,7 @@ async function main() {
     res["qdrant_api_key"] = apiKey;
   }
   res["config"] = {
-    collection_names: pluralCollectionNames,
+    collection_names: collectionNames,
     object_fields: objectFields,
     object_types: objectTypes,
     functions: [],

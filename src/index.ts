@@ -13,14 +13,14 @@ import {
     Connector,
     InternalServerError
 } from "@hasura/ndc-sdk-typescript";
-import { CAPABILITIES_RESPONSE, CONFIGURATION_SCHEMA } from "./constants";
+import { CAPABILITIES_RESPONSE, RAW_CONFIGURATION_SCHEMA } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
 import { doGetSchema } from "./handlers/schema";
 import { doUpdateConfiguration } from "./handlers/updateConfiguration";
 import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
 
-export interface ConfigurationSchema {
+export type ConfigurationSchema = {
     collection_names: string[];
     object_fields: {[k: string]: string[]};
     object_types: { [k: string]: ObjectType};
@@ -28,15 +28,17 @@ export interface ConfigurationSchema {
     procedures: ProcedureInfo[];
 }
 
-export interface Configuration {
+export type Configuration = {
     qdrant_url: string;
     qdrant_api_key?: string;
     config?: ConfigurationSchema;
 }
 
-export interface State { }
+export type RawConfiguration = Configuration;
 
-const connector: Connector<Configuration, State> = {
+export type State = { }
+
+const connector: Connector<RawConfiguration, Configuration, State> = {
     /**
      * Initialize the connector's in-memory state.
      *
@@ -69,8 +71,8 @@ const connector: Connector<Configuration, State> = {
     /**
    * Return jsonschema for the configuration for this connector
    */
-    get_configuration_schema(): JSONSchemaObject {
-        return CONFIGURATION_SCHEMA;
+    get_raw_configuration_schema(): JSONSchemaObject {
+        return RAW_CONFIGURATION_SCHEMA;
     },
 
     make_empty_configuration(): Configuration {
@@ -176,22 +178,6 @@ const connector: Connector<Configuration, State> = {
         request: MutationRequest
     ): Promise<MutationResponse> {
         throw new Error("Mutation endpoint not implemented!");
-    },
-
-    /**
-     * Return any read regions defined in the connector's configuration
-     * @param configuration
-     */
-    get_read_regions(_: Configuration): string[] {
-        return [];
-    },
-
-    /**
-     * Return any write regions defined in the connector's configuration
-     * @param configuration
-     */
-    get_write_regions(_: Configuration): string[] {
-        return [];
     },
 
     /**

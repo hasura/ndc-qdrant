@@ -14,17 +14,15 @@ export async function doUpdateConfiguration(
 
   const collections = await client.getCollections();
   const collectionNames = collections.collections.map((c) => c.name);
-  const pluralCollectionNames = collectionNames.map((i) => i + "s");
 
   if (!configuration.config){
     configuration.config = {
-      collection_names: pluralCollectionNames,
+      collection_names: collectionNames,
       object_types: { ...BASE_TYPES},
       object_fields: {},
       functions: [],
       procedures: []
     }
-    // configuration.config.object_types = { ...baseTypes };
     for (const c of collections.collections) {
       if (RESTRICTED_OBJECTS.includes(c.name)) {
         throw new Error(`${c.name} is a restricted name!`);
