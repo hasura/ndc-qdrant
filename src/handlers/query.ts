@@ -19,6 +19,7 @@ export type QueryPlan = {
     recommendQueries: RecommendRequest[];
     orderedFields: string[];
     dropAggregateRows: string[];
+    phantoms: {[k: string]:{alias: string, strip: boolean}};
 };
 
 type VarSet = {
@@ -520,25 +521,39 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
     let includedPayloadFields: string[] = [];
     let orderedFields: string[] = [];
     let includeVector: boolean = false;
+
+    let phantomFields: string[][] = []; // We need to manage the phantom fields.
+    let phantoms: {[k: string]:{alias: string, strip: boolean}} = {};
     if (query.query.fields !== null && query.query.fields !== undefined){
         for (const [fieldName, fieldDetails] of Object.entries(query.query.fields)) {
             if (fieldDetails.type === "column"){
                 if (fieldName === "vector") {
                     includeVector = true;
                 } else if (!collectionFields[query.collection].includes(fieldName)) {
-                    console.log(fieldName);
-                    console.log(fieldDetails);
-                    // throw new BadRequest(`Requested field ${fieldName} not in schema!`, {});
+                    if (fieldName.startsWith("__hasura_phantom_field__")){
+                        phantomFields.push([fieldName, fieldDetails.column]);
+                    } else {
+                        throw new BadRequest(`Requested field ${fieldName} not in schema!`, {});
+                    }
                 } else {
                     includedPayloadFields.push(fieldName);
                 }
-                // Hasura needs to maintain field ordering, so I would think the connector will as well?
                 orderedFields.push(fieldName);
             } else if (fieldDetails.type === "relationship"){
-                console.log("Remote relationship handle?");
+                throw new BadRequest("Relationships not implemented", {});
+            }
+        }
+        for (let [phantomName, phantom] of phantomFields){
+            if (!includedPayloadFields.includes(phantom)){
+                includedPayloadFields.push(phantom);
+                phantoms[phantom] = {alias: phantomName, strip: true};
+            } else {
+                phantoms[phantom] = {alias: phantomName, strip: false};
             }
         }
     }
+
+    // If we aren't collecting the field, we need to do the same thing we do with variables in a sen
 
     // Here we collect all the queries we might want to make.
     let scrollQueries: ScrollRequest[] = [];
@@ -601,13 +616,15 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
             }
         }
     };
+
     return {
         collectionName: query.collection,
         scrollQueries: scrollQueries,
         searchQueries: searchQueries,
         recommendQueries: recommendQueries,
         orderedFields: orderedFields,
-        dropAggregateRows: dropAggregateRows
+        dropAggregateRows: dropAggregateRows,
+        phantoms: phantoms
     };
 };
 
@@ -676,23 +693,39 @@ export async function performQueries(
         let aggVars: { [key: string]: any } = {};
         for (let p of result) {
             let row: any = {};
-            for (let rowField of queryPlan.orderedFields) {
-                if (rowField === "id") {
-                    row.id = p.id;
-                } else if (rowField === "vector") {
-                    row.vector = p.vector as number[];
-                } else if (rowField === "score" && "score" in p) {
-                    row.score = p.score;
-                } else if (rowField === "version" && "version" in p) {
-                    row.version = p.version;
-                } else {
-                    if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)) {
-                        // These rows are explicitly nullable, and in this case, are null! I.e. User requested the field, and in this row it's null
-                        row[rowField] = null;
-                    } else if (p.payload !== undefined && p.payload !== null) {
-                        row[rowField] = p.payload[rowField] as RowFieldValue;
+            let fieldsToStrip = new Set();
+            for (let field of queryPlan.orderedFields) {
+                if (queryPlan.phantoms[field]) {
+                    let actualField = queryPlan.phantoms[field].alias;
+                    if (field === "id"){
+                        row[actualField] = p.id;
                     } else {
-                        throw new BadRequest("Unknown Field Not supported", {});
+                        row[actualField] = p.payload && p.payload[field];
+                    }
+                    if (queryPlan.phantoms[field].strip) {
+                        fieldsToStrip.add(actualField);
+                    }
+                }
+            }
+            for (let rowField of queryPlan.orderedFields) {
+                if (!fieldsToStrip.has(rowField)){
+                    if (rowField === "id") {
+                        row.id = p.id;
+                    } else if (rowField === "vector") {
+                        row.vector = p.vector as number[];
+                    } else if (rowField === "score" && "score" in p) {
+                        row.score = p.score;
+                    } else if (rowField === "version" && "version" in p) {
+                        row.version = p.version;
+                    } else {
+                        if (p.payload !== undefined && p.payload !== null && (p.payload[rowField] === null || p.payload[rowField] === undefined)) {
+                            // These rows are explicitly nullable, and in this case, are null! I.e. User requested the field, and in this row it's null
+                            row[rowField] = null;
+                        } else if (p.payload !== undefined && p.payload !== null) {
+                            row[rowField] = p.payload[rowField] as RowFieldValue;
+                        } else {
+                            throw new BadRequest("Unknown Field Not supported", {});
+                        }
                     }
                 }
             }
