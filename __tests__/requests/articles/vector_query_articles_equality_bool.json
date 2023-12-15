@@ -2,16 +2,18 @@
     "method": "POST",
     "url": "query",
     "request": {
-        "collection": "articles",
+        "collection": "article",
         "arguments": {
-            "vector": {
+            "search": {
                 "type": "literal",
-                "value": [
-                    0.35,
-                    0.08,
-                    0.11,
-                    0.44
-                ]
+                "value": {
+                    "vector": [
+                        0.35,
+                        0.08,
+                        0.11,
+                        0.44
+                    ]
+                }
             }
         },
         "query": {

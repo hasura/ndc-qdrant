@@ -2,7 +2,7 @@
     "method": "POST",
     "url": "query",
     "request": {
-        "collection": "booleans",
+        "collection": "boolean",
         "arguments": {},
         "query": {
             "fields": {

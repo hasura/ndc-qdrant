@@ -2,11 +2,11 @@
     "method": "POST",
     "url": "query",
     "request": {
-        "collection": "articles",
+        "collection": "article",
         "arguments": {
-            "vector": {
+            "search": {
                 "type": "variable",
-                "name": "$vector_data"
+                "name": "$search_data"
             }
         },
         "query": {
@@ -37,20 +37,24 @@
         "collection_relationships": {},
         "variables": [
             {
-                "$vector_data": [
-                    1,
-                    2,
-                    3,
-                    4
-                ]
+                "$search_data": {
+                    "vector": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                }
             },
             {
-                "$vector_data": [
-                    4,
-                    3,
-                    2,
-                    1
-                ]
+                "$search_data": {
+                    "vector": [
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                }
             }
         ]
     },

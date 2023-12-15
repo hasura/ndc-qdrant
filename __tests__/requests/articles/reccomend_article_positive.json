@@ -2,13 +2,15 @@
     "method": "POST",
     "url": "query",
     "request": {
-        "collection": "articles",
+        "collection": "article",
         "arguments": {
-            "positive": {
+            "recommend": {
                 "type": "literal",
-                "value": [
-                    1
-                ]
+                "value": {
+                    "positive": [
+                        1
+                    ]
+                }
             }
         },
         "query": {
