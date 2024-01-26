@@ -36,54 +36,6 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                 },
                 foreign_keys: {}
             });
-            //     name: cn,
-            //     description: null,
-            //     arguments: {
-            //         vector: {
-            //             type: {
-            //                 type: "nullable",
-            //                 underlying_type: {
-            //                     type: "array",
-            //                     element_type: {
-            //                         type: "named",
-            //                         name: "Float"
-            //                     }
-            //                 }
-            //             }
-            //         },
-            //         positive: {
-            //             type: {
-            //                 type: "nullable",
-            //                 underlying_type: {
-            //                     type: "array",
-            //                     element_type: {
-            //                         type: "named",
-            //                         name: "Int"
-            //                     }
-            //                 }
-            //             }
-            //         },
-            //         negative: {
-            //             type: {
-            //                 type: "nullable",
-            //                 underlying_type: {
-            //                     type: "array",
-            //                     element_type: {
-            //                         type: "named",
-            //                         name: "Int"
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     },
-            //     type: cn,
-            //     uniqueness_constraints: {
-            //         [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
-            //             unique_columns: ["id"]
-            //         }
-            //     },
-            //     foreign_keys: {}
-            // });
         }
     }
     const schemaResponse: SchemaResponse = {
