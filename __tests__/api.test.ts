@@ -80,11 +80,11 @@ describe('API Tests', () => {
     });
 
     afterAll(async () => {
-        let client = getQdrantClient("http://localhost:6333", null);
-        let data = await loadDataFromFile(dataFile);
-        for (let key of Object.keys(data)) {
-            await client.deleteCollection(key);
-        }
+        // let client = getQdrantClient("http://localhost:6333", null);
+        // let data = await loadDataFromFile(dataFile);
+        // for (let key of Object.keys(data)) {
+        //     await client.deleteCollection(key);
+        // }
     });
 
     testDirs.forEach((testDir) => {

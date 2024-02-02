@@ -1,7 +1,8 @@
 import { Configuration } from "..";
 import { getQdrantClient } from "../qdrant";
-import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES } from "../constants";
+import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "../constants";
 import { insertion } from "../utilities";
+import { FunctionInfo, ProcedureInfo } from "@hasura/ndc-sdk-typescript";
 
 
 export async function doUpdateConfiguration(
@@ -14,6 +15,8 @@ export async function doUpdateConfiguration(
 
   const collections = await client.getCollections();
   const collectionNames = collections.collections.map((c) => c.name);
+  const functionsInfo: FunctionInfo[] = [];
+  const proceduresInfo: ProcedureInfo[] = [];
 
   if (!configuration.config){
     configuration.config = {
@@ -48,11 +51,28 @@ export async function doUpdateConfiguration(
           ...BASE_FIELDS,
         },
       };
+
+      configuration.config.object_types[`${c.name}_InsertType`] = {
+        description: null,
+        fields: {
+          ...fieldDict,
+          ...INSERT_FIELDS
+        }
+      }
+      
       for (const [cn, objectType] of Object.entries(
         configuration.config.object_types
       )) {
         configuration.config.object_fields[cn] = Object.keys(objectType.fields);
       }
+    }
+
+    if (functionsInfo.length > 0){
+      configuration.config.functions = functionsInfo;
+    }
+
+    if (proceduresInfo.length > 0){
+      configuration.config.procedures = proceduresInfo;
     }
   }
 

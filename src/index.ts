@@ -17,8 +17,11 @@ import { CAPABILITIES_RESPONSE, RAW_CONFIGURATION_SCHEMA } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
 import { doGetSchema } from "./handlers/schema";
+import { do_mutation } from "./handlers/mutation";
 import { doUpdateConfiguration } from "./handlers/updateConfiguration";
 import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
+import {QdrantClient} from "@qdrant/js-client-rest";
+import { getQdrantClient } from "./qdrant";
 
 export type ConfigurationSchema = {
     collection_names: string[];
@@ -36,7 +39,9 @@ export type Configuration = {
 
 export type RawConfiguration = Configuration;
 
-export type State = { }
+export type State = {
+    client: QdrantClient
+}
 
 const connector: Connector<RawConfiguration, Configuration, State> = {
     /**
@@ -51,10 +56,13 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * @param metrics
      */
     try_init_state(
-        _: Configuration,
+        configuration: Configuration,
         __: unknown
     ): Promise<State> {
-        return Promise.resolve({});
+        const client = getQdrantClient(configuration.qdrant_url, configuration.qdrant_api_key)
+        return Promise.resolve({
+            client: client
+        });
     },
 
     /**
@@ -149,18 +157,18 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      */
     query(
         configuration: Configuration,
-        _: State,
+        state: State,
         request: QueryRequest
     ): Promise<QueryResponse> {
         if (!configuration.config){
             throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
         }
         return doQuery(
+                state,
                 request,
                 configuration.config.collection_names,
                 configuration.config.object_fields,
-                configuration.qdrant_url,
-                configuration.qdrant_api_key);
+                );
     },
 
     /**
@@ -177,7 +185,14 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
         state: State,
         request: MutationRequest
     ): Promise<MutationResponse> {
-        throw new Error("Mutation endpoint not implemented!");
+        if (!configuration.config){
+            throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
+        }
+        return do_mutation(
+            configuration,
+            state,
+            request
+            );
     },
 
     /**

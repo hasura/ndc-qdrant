@@ -2,6 +2,7 @@ import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadReque
 import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
+import { State } from "..";
 
 type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
@@ -338,7 +339,7 @@ async function collectQuery(query: QueryRequest,
                 include: includedPayloadFields
             },
             filter: filter,
-            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! + 1 : 0,
             limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
         };
         if (searchArgs.params){
@@ -361,7 +362,7 @@ async function collectQuery(query: QueryRequest,
             with_vector: includeVector,
             with_payload: {include: includedPayloadFields},
         filter: filter,
-        offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+        offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! + 1 : 0,
         limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
         }
         if (recommendArgs.negative){
@@ -380,7 +381,7 @@ async function collectQuery(query: QueryRequest,
                 include: includedPayloadFields
             },
             filter: filter,
-            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! : 0,
+            offset: (query.query.offset !== undefined && query.query.offset !== null) ? query.query.offset! + 1 : 0,
             limit: (query.query.limit !== undefined && query.query.limit !== null) ? query.query.limit! : MAX_32_INT
         }
     }
@@ -631,10 +632,9 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
  *   const rowSets = await performQueries(query, "myCollection", [], searchRequests, "https://qdrant.url", "api_key", ["id", "vector"], []);
  */
 export async function performQueries(
+    state: State,
     query: QueryRequest,
-    queryPlan: QueryPlan,
-    qdrantUrl: string,
-    qdrantApiKey?: string): Promise<RowSet[]> {
+    queryPlan: QueryPlan): Promise<RowSet[]> {
     let rowSets: RowSet[] = [];
     let results: {
         id: string | number;
@@ -652,18 +652,15 @@ export async function performQueries(
     if (queryPlan.scrollQueries.length > 0) {
         // Run the scrollQueries
         let promises = queryPlan.scrollQueries.map(scrollQuery => {
-            let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-            return client.scroll(queryPlan.collectionName, scrollQuery);
+            return state.client.scroll(queryPlan.collectionName, scrollQuery);
         });
         results = (await Promise.all(promises)).map(r => r.points);
     } else if (queryPlan.searchQueries.length > 0) {
         // Run the searchQueries as a batch!
-        let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-        results = await client.searchBatch(queryPlan.collectionName, { searches: queryPlan.searchQueries });
+        results = await state.client.searchBatch(queryPlan.collectionName, { searches: queryPlan.searchQueries });
     } else if (queryPlan.recommendQueries.length > 0) {
         // Run the reccomendQueries as a batch!
-        let client = getQdrantClient(qdrantUrl, qdrantApiKey);
-        results = await client.recommend_batch(queryPlan.collectionName,
+        results = await state.client.recommend_batch(queryPlan.collectionName,
             {
                 searches: queryPlan.recommendQueries
             });
@@ -732,12 +729,11 @@ export async function performQueries(
  * @param {string | null} qdrantApiKey - The API key for the qdrant service (can be null).
  * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
-export async function doQuery(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }, qdrantUrl: string, qdrantApiKey?: string): Promise<QueryResponse> {
+export async function doQuery(state: State, query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }): Promise<QueryResponse> {
     let queryPlan = await planQueries(query, collectionNames, collectionFields);
     return await performQueries(
+        state,
         query,
-        queryPlan,
-        qdrantUrl,
-        qdrantApiKey
+        queryPlan
     );
 };

@@ -36,23 +36,27 @@ const recursiveType = (val: any, namePrefix: string, objTypes: { [k: string]: Ob
         });
       }
     } else if (typeof val === "object") {
-      const fDict: any = {};
-      for (const [k, v] of Object.entries(val)) {
-        const nestedName = namePrefix + "_" + k;
-        const fieldType = recursiveType(v, nestedName, objTypes);
-        fDict[k] = {
-          description: null,
-          type: fieldType,
-        };
-      }
-      objTypes[namePrefix] = {
-        description: null,
-        fields: fDict,
-      };
+      // const fDict: any = {};
+      // for (const [k, v] of Object.entries(val)) {
+      //   const nestedName = namePrefix + "_" + k;
+      //   const fieldType = recursiveType(v, nestedName, objTypes);
+      //   fDict[k] = {
+      //     description: null,
+      //     type: fieldType,
+      //   };
+      // }
+      // objTypes[namePrefix] = {
+      //   description: null,
+      //   fields: fDict,
+      // };
+      // return {
+      //   type: "named",
+      //   name: namePrefix,
+      // };
       return {
         type: "named",
-        name: namePrefix,
-      };
+        name: "JSON"
+      }
     } else {
       throw new Error(`Not Implemented: ${typeof val}`);
     }

@@ -42,7 +42,7 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
           name: "Int",
         },
       },
-    }
+    },
   },
   Float: {
     aggregate_functions: {},
@@ -71,11 +71,11 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
           name: "Float",
         },
       },
-    }
+    },
   },
   Bool: {
     aggregate_functions: {},
-    comparison_operators: {}
+    comparison_operators: {},
   },
   String: {
     aggregate_functions: {},
@@ -86,9 +86,33 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
           name: "String",
         },
       },
-    }
+    },
+  },
+  JSON: {
+    aggregate_functions: {},
+    comparison_operators: {},
   },
   // Geo Type? https://qdrant.tech/documentation/concepts/payload/
+};
+
+export const INSERT_FIELDS: Record<string, ObjectField> = {
+  id: {
+    description: null,
+    type: {
+      type: "named",
+      name: ID_FIELD_TYPE,
+    },
+  },
+  vector: {
+    description: null,
+    type: {
+      type: "array",
+      element_type: {
+        type: "named",
+        name: "Float",
+      },
+    },
+  },
 };
 
 export const BASE_FIELDS: Record<string, ObjectField> = {
