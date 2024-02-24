@@ -37,8 +37,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                 let existing_point = await state.client.retrieve(collection, {ids: [id]});
                 if (existing_point.length > 0){
                     operation_results.push({
-                        affected_rows: 0,
-                        returning: [
+                        type: "procedure",
+                        result: [
                             {
                                 __value: "Point already exists!"
 
@@ -57,8 +57,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                         ]
                     });
                     operation_results.push({
-                        affected_rows: 1,
-                        returning: [
+                        type: "procedure",
+                        result: [
                             {
                                 __value: point
                             }
@@ -93,8 +93,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     ]
                 });
                 operation_results.push({
-                    affected_rows: 1,
-                    returning: [
+                    type: "procedure",
+                    result: [
                         {
                             __value: point
                         }
@@ -112,8 +112,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     ]
                 });
                 operation_results.push({
-                    affected_rows: 1,
-                    returning: [
+                    type: "procedure",
+                    result: [
                         {
                             __value: point
                         }
@@ -139,8 +139,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                 let existing_point = await state.client.retrieve(collection, {ids: [id]});
                 if (existing_point.length == 0){
                     operation_results.push({
-                        affected_rows: 0,
-                        returning: [
+                        type: "procedure",
+                        result: [
                             {
                                 __value: "Point does not exist!"
 
@@ -159,8 +159,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                         ]
                     });
                     operation_results.push({
-                        affected_rows: 1,
-                        returning: [
+                        type: "procedure",
+                        result: [
                             {
                                 __value: point
                             }
@@ -194,8 +194,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     });
                 }
                 operation_results.push({
-                    affected_rows: newPoints.length,
-                    returning: [
+                    type: "procedure",
+                    result: [
                         {
                             __value: insertResult ? insertResult : "No new points inserted. Some or all points may already exist."
                         }
@@ -236,8 +236,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
         
                 // Push the operation result indicating the number of affected rows and any returning data
                 operation_results.push({
-                    affected_rows: pointsToUpsert.length, // This assumes that upsert always affects the rows, adjust based on actual behavior
-                    returning: [
+                    type: "procedure",
+                    result: [
                         {
                             __value: upsertResult // Use the result of the upsert operation
                         }
@@ -270,8 +270,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     });
                 }
                 operation_results.push({
-                    affected_rows: newPoints.length,
-                    returning: [
+                    type: "procedure",
+                    result: [
                         {
                             __value: insertResult ? insertResult : "No points updated. Some or all points do not exist."
                         }
@@ -292,8 +292,8 @@ export async function do_mutation(configuration: Configuration, state: State, mu
         
                 // Push the operation result
                 operation_results.push({
-                    affected_rows: idsToDelete.length, // Assuming the deletion attempt for each provided ID
-                    returning: [{
+                    type: "procedure",
+                    result: [{
                         __value: deleteResults
                     }]
                 });

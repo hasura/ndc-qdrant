@@ -9,7 +9,7 @@
     "import-data": "ts-node import-data --file __tests__/data/data.json --url http://localhost:6333"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "^1.3.0-alpha.2",
+    "@hasura/ndc-sdk-typescript": "^4.2.0",
     "@json-schema-tools/meta-schema": "^1.7.0",
     "@qdrant/js-client-rest": "^1.5.0",
     "@types/node": "^20.6.0",

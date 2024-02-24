@@ -7,36 +7,50 @@ import {
 import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
 const ID_FIELD_TYPE: "Int" | "String" = "Int";
 export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
-  versions: "^0.1.0",
+  version: "^0.1.0",
   capabilities: {
     query: {
-      variables: {},
+      variables: {}
     },
+    mutation: {
+      transactional: {},
+      explain: {}
+    },
+    relationships: {
+      order_by_aggregate: {}
+    }
   },
 };
 export const SCALAR_TYPES: { [key: string]: ScalarType } = {
   Int: {
     aggregate_functions: {},
     comparison_operators: {
+      eq: {
+        type: "equal"
+      },
       gt: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Int",
         },
       },
       lt: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Int",
         },
       },
       gte: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Int",
         },
       },
       lte: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Int",
@@ -47,25 +61,32 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
   Float: {
     aggregate_functions: {},
     comparison_operators: {
+      eq: {
+        type: "equal"
+      },
       gt: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Float",
         },
       },
       lt: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Float",
         },
       },
       gte: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Float",
         },
       },
       lte: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "Float",
@@ -75,12 +96,20 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
   },
   Bool: {
     aggregate_functions: {},
-    comparison_operators: {},
+    comparison_operators: {
+      eq: {
+        type: "equal"
+      },
+    },
   },
   String: {
     aggregate_functions: {},
     comparison_operators: {
+      eq: {
+        type: "equal"
+      },
       like: {
+        type: "custom",
         argument_type: {
           type: "named",
           name: "String",

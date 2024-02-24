@@ -13,15 +13,14 @@ import {
     Connector,
     InternalServerError
 } from "@hasura/ndc-sdk-typescript";
-import { CAPABILITIES_RESPONSE, RAW_CONFIGURATION_SCHEMA } from "./constants";
+import { CAPABILITIES_RESPONSE } from "./constants";
 import { doQuery } from "./handlers/query";
 import { doExplain } from "./handlers/explain";
 import { doGetSchema } from "./handlers/schema";
 import { do_mutation } from "./handlers/mutation";
-import { doUpdateConfiguration } from "./handlers/updateConfiguration";
-import { JSONSchemaObject } from "@json-schema-tools/meta-schema";
 import {QdrantClient} from "@qdrant/js-client-rest";
 import { getQdrantClient } from "./qdrant";
+import { readFileSync } from "fs"; // Import synchronous file read function
 
 export type ConfigurationSchema = {
     collection_names: string[];
@@ -43,7 +42,28 @@ export type State = {
     client: QdrantClient
 }
 
-const connector: Connector<RawConfiguration, Configuration, State> = {
+const connector: Connector<Configuration, State> = {
+  /**
+   * Validate the configuration files provided by the user, returning a validated 'Configuration',
+   * or throwing an 'Error'. Throwing an error prevents Connector startup.
+   * @param configuration
+   */
+  parseConfiguration(configurationDir: string): Promise<Configuration> {
+    try {
+      const fileContent = readFileSync(configurationDir, 'utf8');
+      const configObject: Configuration = JSON.parse(fileContent);
+      return Promise.resolve(configObject);
+    } catch (error) {
+      console.error("Failed to parse configuration:", error);
+      throw new InternalServerError(
+        "Internal Server Error, server configuration is invalid",
+        {}
+      );
+    }
+
+  },
+
+
     /**
      * Initialize the connector's in-memory state.
      *
@@ -55,7 +75,7 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * @param configuration
      * @param metrics
      */
-    try_init_state(
+    tryInitState(
         configuration: Configuration,
         __: unknown
     ): Promise<State> {
@@ -72,44 +92,8 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * from the NDC specification.
      * @param configuration
      */
-    get_capabilities(_: Configuration): CapabilitiesResponse {
+    getCapabilities(_: Configuration): CapabilitiesResponse {
         return CAPABILITIES_RESPONSE;
-    },
-
-    /**
-   * Return jsonschema for the configuration for this connector
-   */
-    get_raw_configuration_schema(): JSONSchemaObject {
-        return RAW_CONFIGURATION_SCHEMA;
-    },
-
-    make_empty_configuration(): Configuration {
-        const conf: Configuration = {
-            qdrant_url: "",
-            config: {
-                collection_names: [],
-                object_fields: {},
-                object_types: {},
-                functions: [],
-                procedures: []
-            }
-        };
-        return conf;
-    },
-
-    update_configuration(configuration: Configuration): Promise<Configuration> {
-        return doUpdateConfiguration(configuration);
-    },
-
-    /**
-     * Validate the raw configuration provided by the user,
-     * returning a configuration error or a validated [`Connector::Configuration`].
-     * @param configuration
-     */
-    validate_raw_configuration(
-        configuration: Configuration
-    ): Promise<Configuration> {
-        return Promise.resolve(configuration);
     },
 
     /**
@@ -119,7 +103,7 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * from the NDC specification.
      * @param configuration
      */
-    async get_schema(configuration: Configuration): Promise<SchemaResponse> {
+    async getSchema(configuration: Configuration): Promise<SchemaResponse> {
         if (!configuration.config){
             throw new InternalServerError("Internal Server Error, server configuration is invalid", {});
         }
@@ -135,7 +119,7 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * @param state
      * @param request
      */
-    explain(
+    queryExplain(
         configuration: Configuration,
         _: State,
         request: QueryRequest
@@ -145,6 +129,26 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
         }
         return doExplain(request, configuration.config.collection_names, configuration.config.object_fields);
     },
+
+      /**
+   * Explain a mutation by creating an execution plan
+   * @param configuration
+   * @param state
+   * @param request
+   */
+  mutationExplain(
+    configuration: Configuration,
+    _: State,
+    request: MutationRequest
+  ): Promise<ExplainResponse> {
+    if (!configuration.config) {
+      throw new InternalServerError(
+        "Internal Server Error, server configuration is invalid",
+        {}
+      );
+    }
+    throw new InternalServerError("Not implemented", {});
+  },
 
     /**
      * Execute a query
@@ -203,7 +207,7 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * @param configuration
      * @param state
      */
-    health_check(_: Configuration, __: State): Promise<undefined> {
+    healthCheck(_: Configuration, __: State): Promise<undefined> {
         // TODO
         // https://qdrant.github.io/qdrant/redoc/index.html#tag/service/operation/healthz
         return Promise.resolve(undefined);
@@ -221,7 +225,7 @@ const connector: Connector<RawConfiguration, Configuration, State> = {
      * @param configuration
      * @param state
      */
-    fetch_metrics(_: Configuration, __: State): Promise<undefined> {
+    fetchMetrics(_: Configuration, __: State): Promise<undefined> {
         // TODO: Metrics
         // https://qdrant.github.io/qdrant/redoc/index.html#tag/service/operation/metrics
         return Promise.resolve(undefined);

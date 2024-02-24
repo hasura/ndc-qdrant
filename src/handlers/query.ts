@@ -1,5 +1,4 @@
 import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "@hasura/ndc-sdk-typescript";
-import { getQdrantClient } from "../qdrant";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
 import { State } from "..";
@@ -112,8 +111,15 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                 default:
                     throw new BadRequest("Unknown Binary Comparison Operator", {"Unknown Expression Value Type": "This should never happen."});
             }
-            switch (expression.operator.type) {
-                case "equal":
+
+            if (expression.column.type === "column" && expression.column.path.length > 0){
+                // console.log("WE WILL NEED A JOIN!");
+                throw new Error("Not supported yet.");
+            }
+
+            // switch (expression.operator.type) {
+            switch (expression.operator) {
+                case "eq":
                     if (expression.column.name === "id") {
                         filter.must = [
                             {
@@ -142,139 +148,133 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                         throw new NotSupported(`Cannot perform equality comparison on ${expression.column.name}`, {});
                     }
                     break;
-                case "other":
-                    switch (expression.operator.name){
-                        case "like":
-                            if (typeof value === "string") {
-                                filter.must = [
-                                    {
-                                        key: expression.column.name,
-                                        match: {
-                                            "text": value
-                                        }
-                                    }
-                                ]
-                            } else {
-                                throw new NotSupported(`Like is not implemented for ${typeof value}`, {});
+                case "like":
+                    if (typeof value === "string") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                match: {
+                                    "text": value
+                                }
                             }
-                            break;
-                        case "gt":
-                            if (expression.column.name === "id") {
-                                throw new NotSupported("Cannot perform > operation on column ID", {});
+                        ]
+                    } else {
+                        throw new NotSupported(`Like is not implemented for ${typeof value}`, {});
+                    }
+                    break;
+                case "gt":
+                    if (expression.column.name === "id") {
+                        throw new NotSupported("Cannot perform > operation on column ID", {});
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    gt: value
+                                }
                             }
-                            if (typeof value === "number") {
-                                filter.must = [
-                                    {
-                                        key: expression.column.name,
-                                        range: {
-                                            gt: value
-                                        }
-                                    }
-                                ]
-                            } else {
-                                throw new NotSupported("> operation only supported by number types", {});
+                        ]
+                    } else {
+                        throw new NotSupported("> operation only supported by number types", {});
+                    }
+                    break;
+                case "lt":
+                    if (expression.column.name === "id") {
+                        throw new NotSupported("Cannot perform < operation on column ID", {});
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    lt: value
+                                }
                             }
-                            break;
-                        case "lt":
-                            if (expression.column.name === "id") {
-                                throw new NotSupported("Cannot perform < operation on column ID", {});
+                        ]
+                    } else {
+                        throw new NotSupported("< operation only supported by number types", {});
+                    }
+                    break;
+                case "gte":
+                    if (expression.column.name === "id") {
+                        throw new NotSupported("Cannot perform >= operation on columb ID", {});
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    gte: value
+                                }
                             }
-                            if (typeof value === "number") {
-                                filter.must = [
-                                    {
-                                        key: expression.column.name,
-                                        range: {
-                                            lt: value
-                                        }
-                                    }
-                                ]
-                            } else {
-                                throw new NotSupported("< operation only supported by number types", {});
+                        ]
+                    } else {
+                        throw new NotSupported(">= operation only supported by number types", {});
+                    }
+                    break;
+                case "lte":
+                    if (expression.column.name === "id") {
+                        throw new NotSupported("Cannot perform <= operation on column ID", {});
+                    }
+                    if (typeof value === "number") {
+                        filter.must = [
+                            {
+                                key: expression.column.name,
+                                range: {
+                                    lte: value
+                                }
                             }
-                            break;
-                        case "gte":
-                            if (expression.column.name === "id") {
-                                throw new NotSupported("Cannot perform >= operation on columb ID", {});
-                            }
-                            if (typeof value === "number") {
-                                filter.must = [
-                                    {
-                                        key: expression.column.name,
-                                        range: {
-                                            gte: value
-                                        }
-                                    }
-                                ]
-                            } else {
-                                throw new NotSupported(">= operation only supported by number types", {});
-                            }
-                            break;
-                        case "lte":
-                            if (expression.column.name === "id") {
-                                throw new NotSupported("Cannot perform <= operation on column ID", {});
-                            }
-                            if (typeof value === "number") {
-                                filter.must = [
-                                    {
-                                        key: expression.column.name,
-                                        range: {
-                                            lte: value
-                                        }
-                                    }
-                                ]
-                            } else {
-                                throw new NotSupported("<= operation only supported by number types", {});
-                            }
-                            break;
-                        default:
-                            throw new NotSupported("Invalid Expression Operator Name", {});
+                        ]
+                    } else {
+                        throw new NotSupported("<= operation only supported by number types", {});
                     }
                     break;
                 default:
                     throw new BadRequest("Binary Comparison Custom Operator not implemented", {"Unknown Expression Value Type": "This should never happen."});
             }
             break;
-        case "binary_array_comparison_operator":
-            if (expression.operator === "in") {
-                if (expression.values.length === 0) {
-                    throw new NotSupported("In requires an array of items", {});
-                }
-                if (expression.column.name === "id") {
-                    filter.must = [
-                        {
-                            "has_id": expression.values.map(val => val.type === "scalar" ? val.value : undefined) as (string | number)[]
-                        }
-                    ];
-                    break;
-                }
-                if (expression.column.name === "vector") {
-                    throw new NotSupported("Vector in not implemented", {});
-                }
-                let matchList: any[] = [];
-                for (let val of expression.values) {
-                    switch (val.type) {
-                        case "scalar":
-                            matchList.push(val.value);
-                            break;
-                        case "variable":
-                            // Is this not in spec?
-                            throw new NotSupported("In not supported by variables", {});
-                        case "column":
-                            throw new NotSupported("In not supported on columns", {});
-                        default:
-                            throw new BadRequest("In not supported on unknown value type", {});
-                    }
-                }
-                filter.must = [
-                    {
-                        key: expression.column.name,
-                        match: { any: matchList }
-                    }
-                ]
-            } else {
-                throw new BadRequest("Binary Array Comparison Operator not implemented!", {});
-            }
-            break;
+        // case "binary_array_comparison_operator":
+        //     if (expression.operator === "in") {
+        //         if (expression.values.length === 0) {
+        //             throw new NotSupported("In requires an array of items", {});
+        //         }
+        //         if (expression.column.name === "id") {
+        //             filter.must = [
+        //                 {
+        //                     "has_id": expression.values.map(val => val.type === "scalar" ? val.value : undefined) as (string | number)[]
+        //                 }
+        //             ];
+        //             break;
+        //         }
+        //         if (expression.column.name === "vector") {
+        //             throw new NotSupported("Vector in not implemented", {});
+        //         }
+        //         let matchList: any[] = [];
+        //         for (let val of expression.values) {
+        //             switch (val.type) {
+        //                 case "scalar":
+        //                     matchList.push(val.value);
+        //                     break;
+        //                 case "variable":
+        //                     // Is this not in spec?
+        //                     throw new NotSupported("In not supported by variables", {});
+        //                 case "column":
+        //                     throw new NotSupported("In not supported on columns", {});
+        //                 default:
+        //                     throw new BadRequest("In not supported on unknown value type", {});
+        //             }
+        //         }
+        //         filter.must = [
+        //             {
+        //                 key: expression.column.name,
+        //                 match: { any: matchList }
+        //             }
+        //         ]
+        //     } else {
+        //         throw new BadRequest("Binary Array Comparison Operator not implemented!", {});
+        //     }
+        //     break;
         case "and":
             filter.must = expression.expressions.map(expr => recursiveBuildFilter(expr, {}, varSet));
             break;
@@ -316,8 +316,12 @@ async function collectQuery(query: QueryRequest,
     varSet: VarSet | null): Promise<QueryCollection> {
     // Recursively build the query filter.
     let filter: QueryFilter = {};
-    if (query.query.where !== undefined) {
-        filter = recursiveBuildFilter(query.query.where!, filter, varSet);
+    // if (query.query.where !== undefined) {
+    //     filter = recursiveBuildFilter(query.query.where!, filter, varSet);
+    // }
+
+    if (query.query.predicate) {
+        filter = recursiveBuildFilter(query.query.predicate, filter, varSet);
     }
 
     let searchRequest: SearchRequest | null = null;

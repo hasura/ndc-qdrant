@@ -36,19 +36,27 @@ const recursiveType = (val: any, namePrefix: string, objTypes: { [k: string]: Ob
         });
       }
     } else if (typeof val === "object") {
-      // const fDict: any = {};
-      // for (const [k, v] of Object.entries(val)) {
-      //   const nestedName = namePrefix + "_" + k;
-      //   const fieldType = recursiveType(v, nestedName, objTypes);
-      //   fDict[k] = {
-      //     description: null,
-      //     type: fieldType,
-      //   };
-      // }
-      // objTypes[namePrefix] = {
-      //   description: null,
-      //   fields: fDict,
-      // };
+      console.log("VAl");
+      console.log(val);
+      if (val === null || val === undefined){
+        return {
+          type: "named",
+          name: "JSON"
+        }
+      }
+      const fDict: any = {};
+      for (const [k, v] of Object.entries(val)) {
+        const nestedName = namePrefix + "_" + k;
+        const fieldType = recursiveType(v, nestedName, objTypes);
+        fDict[k] = {
+          type: fieldType,
+        };
+      }
+      console.log(fDict);
+      objTypes[namePrefix] = {
+        fields: fDict,
+      };
+      // NOOO It won't work. 😭 collections should let things be object types.
       // return {
       //   type: "named",
       //   name: namePrefix,

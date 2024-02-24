@@ -2,12 +2,12 @@ import { getQdrantClient } from "./src/qdrant";
 import fs from "fs";
 import { promisify } from "util";
 import { insertion } from "./src/utilities";
-import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES } from "./src/constants";
+import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "./src/constants";
 
 const writeFile = promisify(fs.writeFile);
 
 const DEFAULT_URL = "http://localhost:6333";
-const DEFAULT_OUTPUT_FILENAME = "config.json";
+const DEFAULT_OUTPUT_FILENAME = "configuration.json";
 
 const args = process.argv.slice(2);
 let clientUrl = DEFAULT_URL;
@@ -64,6 +64,14 @@ async function main() {
         ...BASE_FIELDS,
       },
     };
+
+    objectTypes[`${cn}_InsertType`] = {
+      description: null,
+      fields: {
+        ...fieldDict,
+        ...INSERT_FIELDS
+      }
+    }
   }
 
   const objectFields: Record<string, string[]> = {};

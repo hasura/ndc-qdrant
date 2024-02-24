@@ -1,7 +1,7 @@
 import { getQdrantClient } from "./src/qdrant";
 import fs from 'fs';
 
-const DEFAULT_DATA_FILE = "./__tests__/data/data.json";
+const DEFAULT_DATA_FILE = "./__tests__/data/users.json";
 const DEFAULT_QDRANT_URL = "http://localhost:6333";
 const DEFAULT_DISTANCE_METRIC = "Cosine";
 const args = process.argv.slice(2);
