@@ -22,6 +22,9 @@ import {QdrantClient} from "@qdrant/js-client-rest";
 import { getQdrantClient } from "./qdrant";
 import { readFileSync } from "fs"; // Import synchronous file read function
 
+const QDRANT_URL = process.env["QDRANT_URL"] as string;
+const QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
+
 export type ConfigurationSchema = {
     collection_names: string[];
     object_fields: {[k: string]: string[]};
@@ -31,12 +34,8 @@ export type ConfigurationSchema = {
 }
 
 export type Configuration = {
-    qdrant_url: string;
-    qdrant_api_key?: string;
     config?: ConfigurationSchema;
 }
-
-export type RawConfiguration = Configuration;
 
 export type State = {
     client: QdrantClient
@@ -50,7 +49,8 @@ const connector: Connector<Configuration, State> = {
    */
   parseConfiguration(configurationDir: string): Promise<Configuration> {
     try {
-      const fileContent = readFileSync(configurationDir, 'utf8');
+      const configLocation = `${configurationDir}/config.json`;
+      const fileContent = readFileSync(configLocation, 'utf8');
       const configObject: Configuration = JSON.parse(fileContent);
       return Promise.resolve(configObject);
     } catch (error) {
@@ -76,10 +76,10 @@ const connector: Connector<Configuration, State> = {
      * @param metrics
      */
     tryInitState(
-        configuration: Configuration,
+        _: Configuration,
         __: unknown
     ): Promise<State> {
-        const client = getQdrantClient(configuration.qdrant_url, configuration.qdrant_api_key)
+        const client = getQdrantClient(QDRANT_URL, QDRANT_API_KEY);
         return Promise.resolve({
             client: client
         });

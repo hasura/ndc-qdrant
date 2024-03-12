@@ -1,5 +1,7 @@
 ## Qdrant Connector Overview
 
+# TODO: Update README with new CLI workflow
+
 The Qdrant Data Connector allows for connecting to a Qdrant instance giving you an instant GraphQL API that supports querying on top of your data. This uses the [Typescript Data Connector SDK](https://github.com/hasura/ndc-sdk-typescript) and implements the [Data Connector Spec](https://github.com/hasura/ndc-spec). 
 
 In order to use this connector you will need a Qdrant database setup. This connector currently only supports querying. 

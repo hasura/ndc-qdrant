@@ -1,13 +1,8 @@
 {
-  "name": "ts-connector-qdrant",
-  "version": "1.0.0",
+  "name": "ndc-qdrant",
+  "version": "0.1.1",
   "main": "index.js",
-  "scripts": {
-    "start": "ts-node ./src/index.ts serve --configuration=configuration.json",
-    "start-server": "ts-node ./src/index.ts configuration serve",
-    "test": "jest",
-    "import-data": "ts-node import-data --file __tests__/data/data.json --url http://localhost:6333"
-  },
+  "scripts": {},
   "dependencies": {
     "@hasura/ndc-sdk-typescript": "^4.2.0",
     "@json-schema-tools/meta-schema": "^1.7.0",

@@ -3,8 +3,8 @@ import { SCALAR_TYPES } from "../constants";
 
 export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
     let collectionInfos: CollectionInfo[] = [];
-    let functionsInfo: FunctionInfo[] = functions;
-    let proceduresInfo: ProcedureInfo[] = procedures;
+    let functionsInfo: FunctionInfo[] = [];
+    let proceduresInfo: ProcedureInfo[] = [];
     for (const cn of Object.keys(objectTypes)){
         if (collectionNames.includes(cn)){
             collectionInfos.push({

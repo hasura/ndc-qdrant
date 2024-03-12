@@ -36,8 +36,6 @@ const recursiveType = (val: any, namePrefix: string, objTypes: { [k: string]: Ob
         });
       }
     } else if (typeof val === "object") {
-      console.log("VAl");
-      console.log(val);
       if (val === null || val === undefined){
         return {
           type: "named",

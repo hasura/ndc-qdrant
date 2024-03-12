@@ -1,7 +1,0 @@
-POST http://localhost:9100/
-Content-Type: application/json
-
-{
-    "qdrant_url": "https://282------.us-east4-0.gcp.cloud.qdrant.io",
-    "qdrant_api_key": "secret"
-}

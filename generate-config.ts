@@ -6,39 +6,13 @@ import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "./sr
 
 const writeFile = promisify(fs.writeFile);
 
-const DEFAULT_URL = "http://localhost:6333";
-const DEFAULT_OUTPUT_FILENAME = "configuration.json";
+const QDRANT_URL = process.env["QDRANT_URL"] as string;
+const QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
 
-const args = process.argv.slice(2);
-let clientUrl = DEFAULT_URL;
-let outputFileName = DEFAULT_OUTPUT_FILENAME;
-let apiKey: string | undefined = undefined;
-
-for (let i = 0; i < args.length; i++) {
-  switch (args[i]) {
-    case "--url":
-      clientUrl = args[i + 1];
-      i++;
-      break;
-    case "--key":
-      apiKey = args[i + 1];
-      i++;
-      break;
-    case "--output":
-      outputFileName = args[i + 1];
-      i++;
-      break;
-    default:
-      console.error(`Unknown argument: ${args[i]}`);
-      process.exit(1);
-  }
-}
-
-let client = getQdrantClient(clientUrl, apiKey);
+let client = getQdrantClient(QDRANT_URL, QDRANT_API_KEY);
 
 async function main() {
   const collections = await client.getCollections();
-  console.log(collections);
   const collectionNames = collections.collections.map((c) => c.name);
 
   let objectTypes: Record<string, any> = {
@@ -79,13 +53,7 @@ async function main() {
     objectFields[cn] = Object.keys(objectType.fields);
   }
 
-  console.log(`Writing object_types and collections to ${outputFileName}`);
-  let res: any = {
-    qdrant_url: clientUrl,
-  };
-  if (apiKey) {
-    res["qdrant_api_key"] = apiKey;
-  }
+  let res: any = {};
   res["config"] = {
     collection_names: collectionNames,
     object_fields: objectFields,
@@ -93,7 +61,7 @@ async function main() {
     functions: [],
     procedures: [],
   }
-  await writeFile(outputFileName, JSON.stringify(res, null, 4));
+  await writeFile(`/etc/connector/config.json`, JSON.stringify(res, null, 4));
 }
 
 main();
