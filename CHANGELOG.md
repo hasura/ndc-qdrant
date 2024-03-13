@@ -5,6 +5,9 @@ This changelog documents changes between release tags.
 ## [Unreleased]
 Upcoming changes for the next versioned release.
 
+## [0.1.5] - 2024-03-13
+* Fix connector-metadata.yaml
+
 ## [0.1.4] - 2024-03-13
 * Fix environment variables to set empty string to undefined
 * Update connector-metadata.yaml with correct values
