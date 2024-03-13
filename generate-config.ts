@@ -7,7 +7,10 @@ import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "./sr
 const writeFile = promisify(fs.writeFile);
 
 const QDRANT_URL = process.env["QDRANT_URL"] as string;
-const QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
+let QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
+if (QDRANT_API_KEY?.length === 0){
+    QDRANT_API_KEY = undefined;
+}
 
 let client = getQdrantClient(QDRANT_URL, QDRANT_API_KEY);
 

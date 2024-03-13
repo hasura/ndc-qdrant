@@ -23,7 +23,10 @@ import { getQdrantClient } from "./qdrant";
 import { readFileSync } from "fs"; // Import synchronous file read function
 
 const QDRANT_URL = process.env["QDRANT_URL"] as string;
-const QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
+let QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
+if (QDRANT_API_KEY?.length === 0){
+    QDRANT_API_KEY = undefined;
+}
 
 export type ConfigurationSchema = {
     collection_names: string[];
