@@ -30,23 +30,72 @@ async function main() {
       with_payload: true,
     });
     let fieldDict = {};
+    let baseFields = {};
+    let insertFields = {};
     if (records.length > 0) {
+      console.log(records);
       const recordPayload = records[0].payload;
       fieldDict = insertion(cn, recordPayload!, objectTypes);
+      if (typeof records[0].id === "number"){
+        baseFields = {
+          id: {
+            description: null,
+            type: {
+              type: "named",
+              name: "Int",
+            },
+          },
+          ...BASE_FIELDS
+        };
+        insertFields = {
+          id: {
+            description: null,
+            type: {
+              type: "named",
+              name: "Int",
+            },
+          },
+          ...INSERT_FIELDS
+        };
+      } else {
+        baseFields = {
+          id: {
+            description: null,
+            type: {
+              type: "named",
+              name: "String",
+            },
+          },
+          ...BASE_FIELDS
+        };
+        insertFields = {
+          id: {
+            description: null,
+            type: {
+              type: "named",
+              name: "String",
+            },
+          },
+          ...INSERT_FIELDS
+        };
+      }
     }
+    console.log(fieldDict);
+
     objectTypes[cn] = {
       description: null,
       fields: {
         ...fieldDict,
-        ...BASE_FIELDS,
+        ...baseFields,
       },
     };
 
+    // Need to handle that here as well for insert fields.
     objectTypes[`${cn}_InsertType`] = {
       description: null,
       fields: {
         ...fieldDict,
-        ...INSERT_FIELDS
+        ...insertFields
       }
     }
   }

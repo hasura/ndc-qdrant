@@ -1,4 +1,4 @@
-import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, BadRequest, Conflict, NotSupported } from "@hasura/ndc-sdk-typescript";
+import {QueryRequest, Expression, QueryResponse, RowSet, RowFieldValue, Conflict, Forbidden} from "@hasura/ndc-sdk-typescript";
 import { components } from "@qdrant/js-client-rest/dist/types/openapi/generated_schema";
 import { MAX_32_INT } from "../constants";
 import { State } from "..";
@@ -92,7 +92,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     ]
                     break;
                 default:
-                    throw new BadRequest("Unknown Unary Comparison Operator", {"Unknown Operator": "This should never happen."});
+                    throw new Forbidden("Unknown Unary Comparison Operator", {"Unknown Operator": "This should never happen."});
             }
             break;
         case "binary_comparison_operator":
@@ -102,19 +102,18 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                     value = expression.value.value
                     break;
                 case "column":
-                    throw new NotSupported("Binary comparisons on columns are not supported yet.", {});
+                    throw new Forbidden("Binary comparisons on columns are not supported yet.", {});
                 case "variable":
                     if (varSet !== null) {
                         value = varSet[expression.value.name];
                     }
                     break;
                 default:
-                    throw new BadRequest("Unknown Binary Comparison Operator", {"Unknown Expression Value Type": "This should never happen."});
+                    throw new Forbidden("Unknown Binary Comparison Operator", {"Unknown Expression Value Type": "This should never happen."});
             }
 
             if (expression.column.type === "column" && expression.column.path.length > 0){
-                // console.log("WE WILL NEED A JOIN!");
-                throw new Error("Not supported yet.");
+                throw new Forbidden("Not supported yet.");
             }
 
             // switch (expression.operator.type) {
@@ -145,7 +144,7 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ];
                     } else {
-                        throw new NotSupported(`Cannot perform equality comparison on ${expression.column.name}`, {});
+                        throw new Forbidden(`Cannot perform equality comparison on ${expression.column.name}`, {});
                     }
                     break;
                 case "like":
@@ -159,12 +158,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new NotSupported(`Like is not implemented for ${typeof value}`, {});
+                        throw new Forbidden(`Like is not implemented for ${typeof value}`, {});
                     }
                     break;
                 case "gt":
                     if (expression.column.name === "id") {
-                        throw new NotSupported("Cannot perform > operation on column ID", {});
+                        throw new Forbidden("Cannot perform > operation on column ID", {});
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -176,12 +175,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new NotSupported("> operation only supported by number types", {});
+                        throw new Forbidden("> operation only supported by number types", {});
                     }
                     break;
                 case "lt":
                     if (expression.column.name === "id") {
-                        throw new NotSupported("Cannot perform < operation on column ID", {});
+                        throw new Forbidden("Cannot perform < operation on column ID", {});
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -193,12 +192,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new NotSupported("< operation only supported by number types", {});
+                        throw new Forbidden("< operation only supported by number types", {});
                     }
                     break;
                 case "gte":
                     if (expression.column.name === "id") {
-                        throw new NotSupported("Cannot perform >= operation on columb ID", {});
+                        throw new Forbidden("Cannot perform >= operation on column ID", {});
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -210,12 +209,12 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new NotSupported(">= operation only supported by number types", {});
+                        throw new Forbidden(">= operation only supported by number types", {});
                     }
                     break;
                 case "lte":
                     if (expression.column.name === "id") {
-                        throw new NotSupported("Cannot perform <= operation on column ID", {});
+                        throw new Forbidden("Cannot perform <= operation on column ID", {});
                     }
                     if (typeof value === "number") {
                         filter.must = [
@@ -227,11 +226,11 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
                             }
                         ]
                     } else {
-                        throw new NotSupported("<= operation only supported by number types", {});
+                        throw new Forbidden("<= operation only supported by number types", {});
                     }
                     break;
                 default:
-                    throw new BadRequest("Binary Comparison Custom Operator not implemented", {"Unknown Expression Value Type": "This should never happen."});
+                    throw new Forbidden("Binary Comparison Custom Operator not implemented", {"Unknown Expression Value Type": "This should never happen."});
             }
             break;
         // case "binary_array_comparison_operator":
@@ -285,9 +284,9 @@ function recursiveBuildFilter(expression: Expression, filter: QueryFilter, varSe
             filter.must_not = [recursiveBuildFilter(expression.expression, {}, varSet)];
             break;
         case "exists":
-            throw new NotSupported("Expression type Exists not implemented!", {});
+            throw new Forbidden("Expression type Exists not implemented!", {});
         default:
-            throw new BadRequest("Unknown Expression Type!", {});
+            throw new Forbidden("Unknown Expression Type!", {});
     }
     return filter;
 };
@@ -334,7 +333,7 @@ async function collectQuery(query: QueryRequest,
         } else if (query.arguments.search.type === "variable" && varSet !== null) {
             searchArgs = varSet[query.arguments.search.name] as SearchArguments;
         } else {
-            throw new BadRequest("Unknown search argument type", {});
+            throw new Forbidden("Unknown search argument type", {});
         }
         searchRequest = {
             vector: searchArgs.vector,
@@ -359,7 +358,7 @@ async function collectQuery(query: QueryRequest,
         } else if (query.arguments.recommend.type === "variable" && varSet !== null){
             recommendArgs = varSet[query.arguments.recommend.name] as RecommendArguments;
         } else {
-            throw new BadRequest("Unknown recommend argument type", {});
+            throw new Forbidden("Unknown recommend argument type", {});
         }
         recommendRequest = {
             positive: recommendArgs.positive,
@@ -391,7 +390,7 @@ async function collectQuery(query: QueryRequest,
     }
 
     if (searchRequest === null && scrollRequest === null && recommendRequest === null) {
-        throw new BadRequest("Must supply a search/scroll/reccomend request.", {});
+        throw new Forbidden("Must supply a search/scroll/reccomend request.", {});
     }
 
     let queryCollection: QueryCollection = {
@@ -441,7 +440,7 @@ function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: strin
                                 aggResults[key] += row[agg.column];
                                 break;
                             } else {
-                                throw new NotSupported("Sum operation not supported on this type", {});
+                                throw new Forbidden("Sum operation not supported on this type", {});
                             }
                         case "avg":
                             if (typeof row[agg.column] === "number") {
@@ -451,10 +450,10 @@ function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: strin
                                 aggResults[key] += (row[agg.column] as unknown as number / numRows) as number;
                                 break;
                             } else {
-                                throw new NotSupported("Average operation not supported on this type", {});
+                                throw new Forbidden("Average operation not supported on this type", {});
                             }
                         default:
-                            throw new BadRequest("Unknown aggregate operation not supported!", {});
+                            throw new Forbidden("Unknown aggregate operation not supported!", {});
                     }
                     break;
                 case "column_count":
@@ -482,7 +481,7 @@ function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: strin
                     aggResults[key] += 1;
                     break;
                 default:
-                    throw new BadRequest("Unkown aggregate type not supported.", {});
+                    throw new Forbidden("Unkown aggregate type not supported.", {});
             }
         }
     }
@@ -513,12 +512,12 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
 
     // Currently not planning to implement relationships - Does not make sense for DB target
     if (Object.keys(query.collection_relationships).length !== 0) {
-        throw new NotSupported("Querying with collection relationships not implemented yet!", {});
+        throw new Forbidden("Querying with collection relationships not implemented yet!", {});
     }
 
     // Sorting not supported by database!
     if (query.query.order_by !== undefined && query.query.order_by !== null) {
-        throw new NotSupported("Order by not implemented", {});
+        throw new Forbidden("Order by not implemented", {});
     }
 
     // Collect the payload fields to include in the response. 
@@ -532,7 +531,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
                 if (fieldDetails.column === "vector") {
                     includeVector = true;
                 } else if (!collectionFields[query.collection].includes(fieldDetails.column)) {
-                    throw new BadRequest(`Requested field ${fieldName} not in schema!`, {});
+                    throw new Forbidden(`Requested field ${fieldName} not in schema!`, {});
                 } else {
                     if (!includedPayloadFields.includes(fieldDetails.column)){
                         includedPayloadFields.push(fieldDetails.column);
@@ -540,7 +539,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
                 }
                 fieldAliases[fieldName] = fieldDetails.column
             } else if (fieldDetails.type === "relationship"){
-                throw new BadRequest("Relationships not implemented", {});
+                throw new Forbidden("Relationships not implemented", {});
             }
         }
     }
@@ -566,7 +565,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
         } else if (queryResponse.recomendRequest !== null) {
             recommendQueries.push(queryResponse.recomendRequest);
         } else {
-            throw new BadRequest("Unknown Query type not supported", {});
+            throw new Forbidden("Unknown Query type not supported", {});
         }
     } else {
         // When there are variables, we will build multiple queries, which we will either run concurrently, or as a batch if batching is supported. It's only possible to either perform ALL searches, or ALL scrolls.
@@ -588,7 +587,7 @@ export async function planQueries(query: QueryRequest, collectionNames: string[]
             } else if (result.recomendRequest !== null) {
                 recommendQueries.push(result.recomendRequest);
             } else {
-                throw new BadRequest("Unknown Query Type not supported", {});
+                throw new Forbidden("Unknown Query Type not supported", {});
             }
         }
     };
@@ -669,7 +668,7 @@ export async function performQueries(
                 searches: queryPlan.recommendQueries
             });
     } else {
-        throw new BadRequest("Unknown Query Type", {});
+        throw new Forbidden("Unknown Query Type", {});
     }
     for (let result of results) {
         let rowSet: RowSet = {};
@@ -694,7 +693,7 @@ export async function performQueries(
                     } else if (p.payload !== undefined && p.payload !== null) {
                         row[alias] = p.payload[field] as RowFieldValue;
                     } else {
-                        throw new BadRequest("Unknown Field Not supported", {});
+                        throw new Forbidden("Unknown Field Not supported", {});
                     }
                 }
             }

@@ -1,4 +1,4 @@
-import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo, ArgumentInfo } from "@hasura/ndc-sdk-typescript";
+import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo, ArgumentInfo, Forbidden } from "@hasura/ndc-sdk-typescript";
 import { SCALAR_TYPES } from "../constants";
 
 export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
@@ -7,6 +7,15 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
     let proceduresInfo: ProcedureInfo[] = [];
     for (const cn of Object.keys(objectTypes)){
         if (collectionNames.includes(cn)){
+            let ID_FIELD_TYPE = "Int";
+            console.log("HERE");
+            console.log(objectTypes[cn]);
+            console.log(objectTypes[cn].fields["id"]);
+            if (objectTypes[cn].fields["id"]["type"]["type"] === "named"){
+                ID_FIELD_TYPE = (objectTypes[cn].fields["id"]["type"] as any)["name"];
+            } else {
+                throw new Forbidden("Invalid ID type", {});
+            }
             collectionInfos.push({
                 name: `${cn}`,
                 description: null,
@@ -81,7 +90,7 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                     "id": {
                         type: {
                             type: "named",
-                            name: "Int"
+                            name: ID_FIELD_TYPE
                         }
                     }
                 },
@@ -182,7 +191,7 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                             type: "array",
                             element_type: {
                                 type: "named",
-                                name: "Int"
+                                name: ID_FIELD_TYPE
                             }
                         }
                     }

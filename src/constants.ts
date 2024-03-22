@@ -125,13 +125,6 @@ export const SCALAR_TYPES: { [key: string]: ScalarType } = {
 };
 
 export const INSERT_FIELDS: Record<string, ObjectField> = {
-  id: {
-    description: null,
-    type: {
-      type: "named",
-      name: ID_FIELD_TYPE,
-    },
-  },
   vector: {
     description: null,
     type: {
@@ -145,13 +138,6 @@ export const INSERT_FIELDS: Record<string, ObjectField> = {
 };
 
 export const BASE_FIELDS: Record<string, ObjectField> = {
-  id: {
-    description: null,
-    type: {
-      type: "named",
-      name: ID_FIELD_TYPE,
-    },
-  },
   score: {
     description: null,
     type: {
