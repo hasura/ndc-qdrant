@@ -1,13 +1,13 @@
 packagingDefinition:
   type: PrebuiltDockerImage
-  dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.6
+  dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.7
 supportedEnvironmentVariables:
   - name: QDRANT_URL
     description: The url for the Qdrant database
   - name: QDRANT_API_KEY
     description: The Qdrant API Key
 commands:
-  update: docker run --rm -e QDRANT_URL="$QDRANT_URL" -e QDRANT_API_KEY="$QDRANT_API_KEY" -v "$HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH":/etc/connector ghcr.io/hasura/ndc-qdrant:v0.1.6 update
+  update: docker run --rm -e QDRANT_URL="$QDRANT_URL" -e QDRANT_API_KEY="$QDRANT_API_KEY" -v "$HASURA_PLUGIN_CONNECTOR_CONTEXT_PATH":/etc/connector ghcr.io/hasura/ndc-qdrant:v0.1.7 update
 dockerComposeWatch:
   - path: ./
     target: /etc/connector

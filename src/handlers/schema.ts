@@ -8,9 +8,6 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
     for (const cn of Object.keys(objectTypes)){
         if (collectionNames.includes(cn)){
             let ID_FIELD_TYPE = "Int";
-            console.log("HERE");
-            console.log(objectTypes[cn]);
-            console.log(objectTypes[cn].fields["id"]);
             if (objectTypes[cn].fields["id"]["type"]["type"] === "named"){
                 ID_FIELD_TYPE = (objectTypes[cn].fields["id"]["type"] as any)["name"];
             } else {
@@ -34,7 +31,7 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
                             type: "nullable",
                             underlying_type: {
                                 type: "named",
-                                name: "_recommend"
+                                name: `_recommend${ID_FIELD_TYPE}`
                             }
                         }
                     }
