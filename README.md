@@ -1,152 +1,155 @@
-## Qdrant Connector Overview
+## Qdrant Connector
 
-# TODO: Update README with new CLI workflow
+The Qdrant Data Connector allows for connecting to a Qdrant database. This connector uses the [Typescript Data Connector SDK](https://github.com/hasura/ndc-sdk-typescript) and implements the [Data Connector Spec](https://github.com/hasura/ndc-spec). 
 
-The Qdrant Data Connector allows for connecting to a Qdrant instance giving you an instant GraphQL API that supports querying on top of your data. This uses the [Typescript Data Connector SDK](https://github.com/hasura/ndc-sdk-typescript) and implements the [Data Connector Spec](https://github.com/hasura/ndc-spec). 
+### Setting up the Qdrant connector using Hasura Cloud & a Qdrant database
 
-In order to use this connector you will need a Qdrant database setup. This connector currently only supports querying. 
+#### Step 1: Prerequisites
 
-## Before you get started
+1. Install the [new Hasura CLI](https://hasura.io/docs/3.0/cli/installation/) — to quickly and easily create and manage your Hasura projects and builds.
+2. Install the [Hasura VS Code extension](https://marketplace.visualstudio.com/items?itemName=HasuraHQ.hasura) — with support for other editors coming soon!
+3. Have a [Qdrant](https://qdrant.tech/) database — for supplying data to your API.
 
-It is recommended that you:
+#### Step 2: Login to Hasura
 
-* Setup a [Qdrant Database instance](https://qdrant.tech/)
-* Install the [Hasura3 CLI](https://github.com/hasura/v3-cli#hasura-v3-cli)
-* Log in via the CLI
-* Install the [connector plugin](https://hasura.io/docs/latest/hasura-cli/connector-plugin/)
-* Install [VSCode](https://code.visualstudio.com)
-* Install the [Hasura VSCode Extension](https://marketplace.visualstudio.com/items?itemName=HasuraHQ.hasura)
+After our prerequisites are taken care of, login to Hasura Cloud with the CLI:
 
-## Deployment For Hasura Users
+`ddn login`
 
-To deploy a connector and use it in a Hasura V3 project, follow these steps:
+This will open up a browser window and initiate an OAuth2 login flow. If the browser window doesn't open automatically, use the link shown in the terminal output to launch the flow.
 
-1. Create a Hasura V3 project (or use an existing project)
+#### Step 3: Create a new project
 
-2. Generate a configuration file for your Qdrant Database, there are 2 ways to get the configuration file.
+We'll use the `create project` command to create a new project:
 
-    First you'll need to clone this repo, and run ```npm install```
-    i. The easiest way to generate a configuration file is to run the generate-config script using ts-node. 
+`ddn create project --dir ./ddn`
 
-    When running this script specify:
+#### Step 4: Add a connector manifest
 
-    --url The URL where Qdrant is hosted
+Let's move into the project directory:
 
-    --key The API key for connecting the the Qdrant Client.
+`cd ddn`
 
-    --output The name of the file to store the configuration in
+Create a subgraph:
 
-    Example Usage:
+`ddn create subgraph qdrant`
 
-    ```ts-node generate-config --url https://qdrant-url --key QdrantApiKey --output config.json```
-    
-    ii. You can also run the connector in configuration mode and generate the config file using CURL.
+Then, create a connector manifest:
+`ddn add connector-manifest qdrant_connector --subgraph qdrant --hub-connector hasura/qdrant --type cloud`
 
-    ```ts-node ./src/index.ts configuration serve```
+#### Step 5: Edit the connector manifest
 
-    You can then send a CURL request specifying the qdrant_url and qdrant_api_key to get the configuration file.
-
-    Example:
-
-    ```curl -X POST -H "Content-Type: application/json" -d '{"qdrant_url": "https://link-to-qdrant.cloud.qdrant.io", "qdrant_api_key": "QdrantApiKey"}' http://localhost:9100 > config.json```
-
-3. Once you have a configuration file, you can deploy the connector onto Hasura Cloud
-
-Ensure you are logged in to Hasura CLI
-
-```hasura3 cloud login --pat 'YOUR-HASURA-TOKEN'```
-
-From there, you can deploy the connector:
-
-```hasura3 connector create qdrant:v1 --github-repo-url https://github.com/hasura/ndc-qdrant/tree/main --config-file ./config.json```
-
-## Usage
-
-Once your connector is deployed, you can get the URL of the connector using:
-```hasura3 connector list```
-
-```
-my-cool-connector:v1 https://connector-9XXX7-hyc5v23h6a-ue.a.run.app active
-```
-
-In order to use the connector once deployed you will first want to reference the connector in your project metadata:
+You should have a connector manifest created at `ddn/qdrant/qdrant_connector/connector/qdrant_connector.build.hml`
 
 ```yaml
-kind: "AuthConfig"
-allowRoleEmulationFor: "admin"
-webhook:
-  mode: "POST"
-  webhookUrl: "https://auth.pro.hasura.io/webhook/ddn?role=admin"
----
-kind: DataConnector
+kind: ConnectorManifest
 version: v1
+spec:
+  supergraphManifests:
+    - base
 definition:
-  name: my_connector
-  url:
-    singleUrl: 'https://connector-9XXX7-hyc5v23h6a-ue.a.run.app'
+  name: qdrant_connector
+  type: cloud
+  connector:
+    type: hub
+    name: hasura/qdrant:v0.1.7
+  deployments:
+    - context: .
+      env:
+        QDRANT_API_KEY:
+          value: ""
+        QDRANT_URL:
+          value: ""
 ```
 
-If you have the [Hasura VSCode Extension](https://marketplace.visualstudio.com/items?itemName=HasuraHQ.hasura) installed
-you can run the following code actions:
+Fill in the value for the QDRANT_API_KEY and QDRANT_URL environment variables with your Qdrant credentials.
 
-* `Hasura: Refresh data source`
-* `Hasura: Track all collections / functions ...`
+(Make sure to save your changes to the file!)
 
-This will integrate your connector into your Hasura project which can then be deployed or updated using the Hasura3 CLI:
+#### Step 6: Start a development session
+
+Start a Hasura dev session using the following command:
+
+`ddn dev`
+
+You should see something like this if the connector has been deployed successfully: 
 
 ```
-hasura3 cloud build create --project-id my-project-id --metadata-file metadata.hml
+3:29PM INF Building SupergraphManifest "base"...
++---------------+-------------------------------------------------------------------------------------------------------+
+| Build Version | 39e8b49ed5                                                                                            |
++---------------+-------------------------------------------------------------------------------------------------------+
+| API URL       | https://allowing-sturgeon-9867-39e8b49ed5.ddn.hasura.app/graphql                                      |
++---------------+-------------------------------------------------------------------------------------------------------+
+| Console URL   | https://console.hasura.io/project/allowing-sturgeon-9867/environment/default/build/39e8b49ed5/graphql |
++---------------+-------------------------------------------------------------------------------------------------------+
+| Project Name  | allowing-sturgeon-9867                                                                                |
++---------------+-------------------------------------------------------------------------------------------------------+
+| Description   | Dev build - Mon, 15 Apr 2024 15:29:56 CDT                                                             |
++---------------+-------------------------------------------------------------------------------------------------------+
 ```
 
-## Service Authentication
+Navigate to your Console URL and you can issue a query or mutation.
 
-If you don't wish to have your connector publically accessible then you must set a service token by specifying the  `SERVICE_TOKEN_SECRET` environment variable when creating your connector:
+### Setting up the Qdrant connector locally (Coming Soon)
 
-* `--env SERVICE_TOKEN_SECRET=SUPER_SECRET_TOKEN_XXX123`
+Please keep an eye out for instructions on running things locally which will be coming soon. 
 
-Your Hasura project metadata must then set a matching bearer token:
+### Qdrant Introspection Details:
 
-```yaml
-kind: DataConnector
-version: v1
-definition:
-  name: my_connector
-  url:
-    singleUrl: 'https://connector-9XXX7-hyc5v23h6a-ue.a.run.app'
-  headers:
-    Authorization:
-      value: "Bearer SUPER_SECRET_TOKEN_XXX123"
+The current Qdrant introspection performed is naive, as it will simply poll the points for the first point, and assume the schema matches that point. In order to expose the schema via GraphQL all points must conform to the introspected schema. 
+
+### Performing Joins
+
+Joins cannot be performed to the Qdrant connector, as joins with collection arguments are not supported. Joins CAN be performed from the Qdrant connector to another connector such as Postgres for example.
+
+### Qdrant Connector Usage Details
+
+The Qdrant connector makes use of parameterized collections to allow for performing a vector search.
+
+Here is an example of a query that passes an array of positive and negative examples by ID.
+
+```graphql
+query MyQuery {
+  qdrant_album(args: {recommend: {positive: [1], negative: [2]}}) {
+    artistId
+    id
+    score
+    title
+    vector
+  }
+}
 ```
 
-While you can specify the token inline as above, it is recommended to use the Hasura secrets functionality for this purpose:
+The above query gets recommendations for albums with AlbumID = 1 as a positive example and AlbumID = 2 as a negative example.
 
-```yaml
-kind: DataConnector
-version: v1
-definition:
-  name: my_connector
-  url:
-    singleUrl: 'https://connector-9XXX7-hyc5v23h6a-ue.a.run.app'
-  headers:
-    Authorization:
-      valueFromSecret: BEARER_TOKEN_SECRET
+Here is an example of a query that performs a vector search.
+
+```graphql
+query MyQuery {
+  qdrant_album(args: {search: {vector: [0.5]}}) {
+    artistId
+    id
+    score
+    title
+    vector
+  }
+}
 ```
 
-NOTE: This secret should contain the `Bearer ` prefix.
+This will perform a similarity search and surface the most relevant results to the provided vector. (Note: The vector inputs are likely to be the embeddings vectors. These will be a array of floats of varying size.)
 
+There are additional parameters that can be used to configure the Qdrant search such as:
 
-## Default Collection Parameters:
+*  score_threshold - Define a minimal score threshold for the result. If defined, less similar results will not be returned. Score of the returned result might be higher or smaller than the threshold depending on the Distance function used. E.g. for cosine similarity only higher scores will be returned.
 
-You'll find that each collection on your graph is parameterized, and that you have the ability to pass in the following parameters as collection arguments:
+* params
+  * hnsw_ef - Params relevant to HNSW index Size of the beam in a beam-search. Larger the value - more accurate the result, more time required for search.
+  * exact - Default: false Search without approximation. If set to true, search may run long but with exact results.
+  * indexed_only - Default: false If enabled, the engine will only perform search among indexed or small segments. Using this option prevents slow searches in case of delayed index, but does not guarantee that all uploaded vectors will be included in search results
+  * quantization - Default null
+    * ignore - Default: false If true, quantized vectors are ignored. Default is false.
+    * rescore - Default: null If true, use original vectors to re-score top-k results. Might require more time in case if original vectors are stored on disk. If not set, qdrant decides automatically apply rescoring or not.
+    * oversampling - Default: null Oversampling factor for quantization. Default is 1.0. Defines how many extra vectors should be pre-selected using quantized index, and then re-scored using original vectors. For example, if oversampling is 2.4 and limit is 100, then 240 vectors will be pre-selected using quantized index, and then top-100 will be returned after re-scoring.
 
-vector
-positive
-negative
-
-These will allow you to perform vector searches, or to get recommendations.
-
-You can pass in a search vector to the vector parameter, which is a flat list of floats. This will typically be the output from some embedding model, and it will return results ordered by closest match. You'll likely want to ensure that you are passing a limit on all your queries.
-
-You can also pass in an array of ID's to the positive and negative parameters to provide example data-points. This is an easy way to get recommendations without having to manage or deal with passing around entire vectors. If you know the ID of some positive and negative data-points, you can simply pass the ID's. You must provide at least 1 positive example when using this. You can provide a list of positive examples, a list of positive and a list of negative, but you cannot provide only a list of negative examples.
-
-You can read more about these parameters [here](https://qdrant.tech/documentation/concepts/search/)
+For more information, please see the [official Qdrant documentation](https://qdrant.github.io/qdrant/redoc/index.html#tag/points/operation/search_points).
