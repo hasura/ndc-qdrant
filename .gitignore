@@ -3,3 +3,4 @@ dist/
 .DS_Store
 configuration.json
 PRIVATE_REMOTE_CONFIGURATION.http
+config.json

@@ -3,14 +3,18 @@ import fs from "fs";
 import { promisify } from "util";
 import { insertion } from "./src/utilities";
 import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "./src/constants";
-
+const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
-
+let HASURA_CONFIGURATION_DIRECTORY = process.env["HASURA_CONFIGURATION_DIRECTORY"] as string | undefined;
+if (HASURA_CONFIGURATION_DIRECTORY === undefined || HASURA_CONFIGURATION_DIRECTORY.length === 0){
+    HASURA_CONFIGURATION_DIRECTORY = ".";
+}
 const QDRANT_URL = process.env["QDRANT_URL"] as string;
 let QDRANT_API_KEY = process.env["QDRANT_API_KEY"] as string | undefined;
 if (QDRANT_API_KEY?.length === 0){
     QDRANT_API_KEY = undefined;
 }
+
 
 let client = getQdrantClient(QDRANT_URL, QDRANT_API_KEY);
 
@@ -33,7 +37,6 @@ async function main() {
     let baseFields = {};
     let insertFields = {};
     if (records.length > 0) {
-      console.log(records);
       const recordPayload = records[0].payload;
       fieldDict = insertion(cn, recordPayload!, objectTypes);
       if (typeof records[0].id === "number"){
@@ -80,7 +83,6 @@ async function main() {
         };
       }
     }
-    console.log(fieldDict);
 
     objectTypes[cn] = {
       description: null,
@@ -113,7 +115,20 @@ async function main() {
     functions: [],
     procedures: [],
   }
-  await writeFile(`/etc/connector/config.json`, JSON.stringify(res, null, 4));
+  const jsonString = JSON.stringify(res, null, 4);
+  let filePath = `${HASURA_CONFIGURATION_DIRECTORY}/config.json`;
+  try {
+      const existingData = await readFile(filePath, 'utf8');
+      if (existingData !== jsonString) {
+          await writeFile(filePath, jsonString);
+          console.log('File updated.');
+      } else {
+          console.log('No changes detected. File not updated.');
+      }
+  } catch (error) {
+      await writeFile(filePath, jsonString);
+      console.log('New file written.');
+  }
 }
 
 main();
