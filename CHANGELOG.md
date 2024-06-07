@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.1.9] - 2024-05-6
+* Add multi-arch build
+
 ## [0.1.8] - 2024-04-17
 * Update SDK to 4.5.0
 * Update packaging to use a Dockerized Command

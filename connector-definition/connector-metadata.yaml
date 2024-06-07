@@ -1,6 +1,6 @@
 packagingDefinition:
   type: PrebuiltDockerImage
-  dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.8
+  dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.9
 supportedEnvironmentVariables:
   - name: QDRANT_URL
     description: The url for the Qdrant database
@@ -9,7 +9,7 @@ supportedEnvironmentVariables:
 commands:
   update:
     type: Dockerized
-    dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.8
+    dockerImage: ghcr.io/hasura/ndc-qdrant:v0.1.9
     commandArgs:
       - update
 dockerComposeWatch:
