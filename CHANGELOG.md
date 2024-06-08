@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.0] - 2024-05-6
+* Added support for multi-vector points
+
 ## [0.1.9] - 2024-05-6
 * Add multi-arch build
 

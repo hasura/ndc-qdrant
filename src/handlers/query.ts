@@ -5,6 +5,7 @@ import { State } from "..";
 
 type QueryFilter = components["schemas"]["Filter"];
 type SearchRequest = components["schemas"]["SearchRequest"];
+type NamedVectorStruct = components["schemas"]["NamedVectorStruct"];
 type ScrollRequest = components["schemas"]["ScrollRequest"];
 type RecommendRequest = components["schemas"]["RecommendRequest"];
 
@@ -46,7 +47,7 @@ type SearchParams = {
 
 type SearchArguments = {
     vector: number[];
-    vector_name?: string;
+    name?: string;
     params?: SearchParams;
     score_threshold?: number;
 };
@@ -54,9 +55,9 @@ type SearchArguments = {
 type RecommendArguments = {
     positive: number[];
     negative?: number[];
-    vector_name?: string;
     params?: SearchParams;
     score_threshold?: number;
+    using?: string;
 };
 
 // Helper function to determine if a value is a float
@@ -336,7 +337,7 @@ async function collectQuery(query: QueryRequest,
             throw new Forbidden("Unknown search argument type", {});
         }
         searchRequest = {
-            vector: searchArgs.vector,
+            vector: searchArgs.name ? {vector: searchArgs.vector, name: searchArgs.name} : searchArgs.vector,
             with_vector: includeVector,
             with_payload: {
                 include: includedPayloadFields
@@ -376,6 +377,9 @@ async function collectQuery(query: QueryRequest,
         }
         if (recommendArgs.score_threshold){
             recommendRequest.score_threshold = recommendArgs.score_threshold;
+        }
+        if (recommendArgs.using){
+            recommendRequest.using = recommendArgs.using;
         }
     } else {
         scrollRequest = {
@@ -504,7 +508,7 @@ function rowAggregate(aggResults: { [key: string]: any }, aggVars: { [key: strin
  * @example
  *   const myQueryPlan = await planQueries(myQuery, availableCollections, availableFields);
  */
-export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }): Promise<QueryPlan> {
+export async function planQueries(query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }, collectionVectors: {[k: string]: boolean}): Promise<QueryPlan> {
     // Assert that the collection is registered in the schema
     if (!collectionNames.includes(query.collection)) {
         throw new Conflict("Collection not found in schema!", {});
@@ -732,8 +736,8 @@ export async function performQueries(
  * @param {string | null} qdrantApiKey - The API key for the qdrant service (can be null).
  * @returns {Promise<QueryResponse>} - A promise resolving to the query response.
  */
-export async function doQuery(state: State, query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }): Promise<QueryResponse> {
-    let queryPlan = await planQueries(query, collectionNames, collectionFields);
+export async function doQuery(state: State, query: QueryRequest, collectionNames: string[], collectionFields: { [key: string]: string[] }, collection_vectors: {[k: string]: boolean}): Promise<QueryResponse> {
+    let queryPlan = await planQueries(query, collectionNames, collectionFields, collection_vectors);
     return await performQueries(
         state,
         query,

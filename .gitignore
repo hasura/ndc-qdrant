@@ -4,3 +4,4 @@ dist/
 configuration.json
 PRIVATE_REMOTE_CONFIGURATION.http
 config.json
+TMP.md

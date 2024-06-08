@@ -1,10 +1,10 @@
 import { ExplainResponse, QueryRequest } from "@hasura/ndc-sdk-typescript";
 import { QueryPlan, planQueries } from "./query";
 
-export async function doExplain(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}): Promise<ExplainResponse>{
+export async function doExplain(query: QueryRequest, collectionNames: string[], collectionFields: {[key: string]: string[]}, collectionVectors: {[key: string]: boolean}): Promise<ExplainResponse>{
     let explainResponse: ExplainResponse;
     try {
-        let queryPlan: QueryPlan = await planQueries(query, collectionNames, collectionFields);
+        let queryPlan: QueryPlan = await planQueries(query, collectionNames, collectionFields, collectionVectors);
         let isScroll: boolean = queryPlan.scrollQueries.length > 0;
         explainResponse = {details:{
             queryRequest: JSON.stringify(query),

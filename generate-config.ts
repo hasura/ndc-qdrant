@@ -2,7 +2,7 @@ import { getQdrantClient } from "./src/qdrant";
 import fs from "fs";
 import { promisify } from "util";
 import { insertion } from "./src/utilities";
-import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS } from "./src/constants";
+import { RESTRICTED_OBJECTS, BASE_FIELDS, BASE_TYPES, INSERT_FIELDS, INSERT_FIELDS_VECTOR } from "./src/constants";
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 let HASURA_CONFIGURATION_DIRECTORY = process.env["HASURA_CONFIGURATION_DIRECTORY"] as string | undefined;
@@ -21,7 +21,7 @@ let client = getQdrantClient(QDRANT_URL, QDRANT_API_KEY);
 async function main() {
   const collections = await client.getCollections();
   const collectionNames = collections.collections.map((c) => c.name);
-
+  let collectionVectors: Record<string, boolean> = {};
   let objectTypes: Record<string, any> = {
     ...BASE_TYPES,
   };
@@ -32,6 +32,7 @@ async function main() {
     const { points: records } = await client.scroll(cn, {
       limit: 1,
       with_payload: true,
+      with_vector: true
     });
     let fieldDict = {};
     let baseFields = {};
@@ -50,16 +51,29 @@ async function main() {
           },
           ...BASE_FIELDS
         };
-        insertFields = {
-          id: {
-            description: null,
-            type: {
-              type: "named",
-              name: "Int",
+        if (Array.isArray(records[0].vector)){
+          insertFields = {
+            id: {
+              description: null,
+              type: {
+                type: "named",
+                name: "Int",
+              },
             },
-          },
-          ...INSERT_FIELDS
-        };
+            ...INSERT_FIELDS
+          };
+        } else {
+          insertFields = {
+            id: {
+              description: null,
+              type: {
+                type: "named",
+                name: "Int",
+              },
+            },
+            ...INSERT_FIELDS_VECTOR
+          };
+        }
       } else {
         baseFields = {
           id: {
@@ -71,16 +85,36 @@ async function main() {
           },
           ...BASE_FIELDS
         };
-        insertFields = {
-          id: {
-            description: null,
-            type: {
-              type: "named",
-              name: "String",
+
+        if (Array.isArray(records[0].vector)){
+          insertFields = {
+            id: {
+              description: null,
+              type: {
+                type: "named",
+                name: "String",
+              },
             },
-          },
-          ...INSERT_FIELDS
-        };
+            ...INSERT_FIELDS
+          };
+        } else {
+          insertFields = {
+            id: {
+              description: null,
+              type: {
+                type: "named",
+                name: "String",
+              },
+            },
+            ...INSERT_FIELDS_VECTOR
+          };
+        }
+      }
+
+      if (!Array.isArray(records[0].vector)){
+        collectionVectors[cn] = true;
+      } else {
+        collectionVectors[cn] = false;
       }
     }
 
@@ -112,6 +146,7 @@ async function main() {
     collection_names: collectionNames,
     object_fields: objectFields,
     object_types: objectTypes,
+    collection_vectors: collectionVectors,
     functions: [],
     procedures: [],
   }

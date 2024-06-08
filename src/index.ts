@@ -32,6 +32,7 @@ export type ConfigurationSchema = {
     collection_names: string[];
     object_fields: {[k: string]: string[]};
     object_types: { [k: string]: ObjectType};
+    collection_vectors: {[k: string]: boolean};
     functions: FunctionInfo[];
     procedures: ProcedureInfo[];
 }
@@ -113,7 +114,7 @@ const connector: Connector<Configuration, State> = {
         if (!configuration.config){
             throw new Forbidden("Internal Server Error, server configuration is invalid", {});
         }
-        return Promise.resolve(doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures));
+        return Promise.resolve(doGetSchema(configuration.config.object_types, configuration.config.collection_names, configuration.config.functions, configuration.config.procedures, configuration.config.collection_vectors));
     },
 
     /**
@@ -133,7 +134,7 @@ const connector: Connector<Configuration, State> = {
         if (!configuration.config){
             throw new Forbidden("Internal Server Error, server configuration is invalid", {});
         }
-        return doExplain(request, configuration.config.collection_names, configuration.config.object_fields);
+        return doExplain(request, configuration.config.collection_names, configuration.config.object_fields, configuration.config.collection_vectors);
     },
 
       /**
@@ -178,6 +179,7 @@ const connector: Connector<Configuration, State> = {
                 request,
                 configuration.config.collection_names,
                 configuration.config.object_fields,
+                configuration.config.collection_vectors
                 );
     },
 

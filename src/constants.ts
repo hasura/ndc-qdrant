@@ -136,6 +136,32 @@ export const INSERT_FIELDS: Record<string, ObjectField> = {
   },
 };
 
+export const INSERT_FIELDS_VECTOR: Record<string, ObjectField> = {
+  vectors: {
+    description: null,
+    type: {
+      type: "array",
+      element_type: {
+        type: "array",
+        element_type: {
+          type: "named",
+          name: "Float",
+        }
+      }
+    },
+  },
+  vector_names: {
+    description: null,
+    type: {
+      type: "array",
+      element_type: {
+        type: "named",
+        name: "String"
+      }
+    },
+  },
+};
+
 export const BASE_FIELDS: Record<string, ObjectField> = {
   score: {
     description: null,
@@ -268,6 +294,44 @@ export const BASE_TYPES: { [k: string]: ObjectType } = {
       },
     },
   },
+  _searchVector: {
+    description: "Search the vector database for similar vectors",
+    fields: {
+      vector: {
+        type: {
+          type: "array",
+          element_type: {
+            type: "named",
+            name: "Float",
+          },
+        },
+      },
+      name: {
+        type: {
+          type: "named",
+          name: "String"
+        }
+      },
+      params: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "_params",
+          },
+        },
+      },
+      score_threshold: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "Float",
+          },
+        },
+      },
+    },
+  },
   _recommendInt: {
     description:
       "Provide an array of positive and negative example points and get a recommendation",
@@ -337,6 +401,108 @@ export const BASE_TYPES: { [k: string]: ObjectType } = {
             },
           },
         },
+      },
+      params: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "_params",
+          },
+        },
+      },
+      score_threshold: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "Float",
+          },
+        },
+      },
+    },
+  },
+  _recommendIntVector: {
+    description:
+      "Provide an array of positive and negative example points and get a recommendation",
+    fields: {
+      positive: {
+        type: {
+          type: "array",
+          element_type: {
+            type: "named",
+            name: "Int",
+          },
+        },
+      },
+      negative: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "array",
+            element_type: {
+              type: "named",
+              name: "Int",
+            },
+          },
+        },
+      },
+      using: {
+        type: {
+          type: "named",
+          name: "String"
+        }
+      },
+      params: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "_params",
+          },
+        },
+      },
+      score_threshold: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "named",
+            name: "Float",
+          },
+        },
+      },
+    },
+  },
+  _recommendStringVector: {
+    description:
+      "Provide an array of positive and negative example points and get a recommendation",
+    fields: {
+      positive: {
+        type: {
+          type: "array",
+          element_type: {
+            type: "named",
+            name: "String",
+          },
+        },
+      },
+      negative: {
+        type: {
+          type: "nullable",
+          underlying_type: {
+            type: "array",
+            element_type: {
+              type: "named",
+              name: "String",
+            },
+          },
+        },
+      },
+      using: {
+        type: {
+          type: "named",
+          name: "String"
+        }
       },
       params: {
         type: {

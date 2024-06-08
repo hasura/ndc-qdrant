@@ -23,7 +23,7 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                 if (procedure.arguments.object){
                     let args = procedure.arguments.object as any;
                     let id: number = 0;
-                    let vector: number[] = [];
+                    let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = [];
                     const payload: any = {};
                     for (let field of Object.keys(args)){
                         if (field === "id"){
@@ -32,6 +32,15 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                             vector = args[field];
                         } else {
                             payload[field] = args[field];
+                        }
+                    }
+                    if (vector.length === 0){
+                        vector = {};
+                        if (args.vectors && args.vector_names){
+                            for (let i = 0; i < args.vector_names.length; i++){
+                                console.log(args.vector_names[i]);
+                                vector[args.vector_names[i]] = args.vectors[i];
+                            }
                         }
                     }
                     let existing_point = await state.client.retrieve(collection, {ids: [id]});
@@ -71,7 +80,7 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                 if (procedure.arguments.object){
                     let args = procedure.arguments.object as any;
                     let id: number = 0;
-                    let vector: number[] = [];
+                    let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = [];
                     const payload: any = {};
                     for (let field of Object.keys(args)){
                         if (field === "id"){
@@ -80,6 +89,15 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                             vector = args[field];
                         } else {
                             payload[field] = args[field];
+                        }
+                    }
+                    if (vector.length === 0){
+                        vector = {};
+                        if (args.vectors && args.vector_names){
+                            for (let i = 0; i < args.vector_names.length; i++){
+                                console.log(args.vector_names[i]);
+                                vector[args.vector_names[i]] = args.vectors[i];
+                            }
                         }
                     }
                     let point = await state.client.upsert(collection, {
@@ -125,7 +143,7 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                 if (procedure.arguments.object){
                     let args = procedure.arguments.object as any;
                     let id: number = 0;
-                    let vector: number[] = [];
+                    let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = [];
                     const payload: any = {};
                     for (let field of Object.keys(args)){
                         if (field === "id"){
@@ -134,6 +152,15 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                             vector = args[field];
                         } else {
                             payload[field] = args[field];
+                        }
+                    }
+                    if (vector.length === 0){
+                        vector = {};
+                        if (args.vectors && args.vector_names){
+                            for (let i = 0; i < args.vector_names.length; i++){
+                                console.log(args.vector_names[i]);
+                                vector[args.vector_names[i]] = args.vectors[i];
+                            }
                         }
                     }
                     let existing_point = await state.client.retrieve(collection, {ids: [id]});
@@ -174,11 +201,20 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     let args = procedure.arguments.objects as any[];
                     let pointsToInsert = args.map(arg => {
                         let id: number = arg.id;
-                        let vector: number[] = arg.vector || [];
+                        let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = arg.vector || [];
                         const payload: any = {};
                         for (let field of Object.keys(arg)) {
-                            if (field !== "id" && field !== "vector") {
+                            if (field !== "id" && field !== "vector" && field !== "vectors" && field !== "vector_names") {
                                 payload[field] = arg[field];
+                            }
+                        }
+                        if (vector.length === 0){
+                            vector = {};
+                            if (arg.vectors && arg.vector_names){
+                                for (let i = 0; i < arg.vector_names.length; i++){
+                                    console.log(arg.vector_names[i]);
+                                    vector[arg.vector_names[i]] = arg.vectors[i];
+                                }
                             }
                         }
                         return { id, vector, payload };
@@ -214,16 +250,24 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     // Map each argument object to a format suitable for upsert operation
                     let pointsToUpsert = args.map(arg => {
                         let id: number = arg.id; // Extract the id
-                        let vector: number[] = arg.vector || []; // Extract the vector if available, or default to an empty array
+                        let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = arg.vector || [];
                         const payload: any = {}; // Initialize an empty payload object
             
                         // Populate the payload with fields from arg, excluding 'id' and 'vector'
                         for (let field of Object.keys(arg)) {
-                            if (field !== "id" && field !== "vector") {
+                            if (field !== "id" && field !== "vector" && field !== "vectors" && field !== "vector_names") {
                                 payload[field] = arg[field];
                             }
                         }
-            
+                        if (vector.length === 0){
+                            vector = {};
+                            if (arg.vectors && arg.vector_names){
+                                for (let i = 0; i < arg.vector_names.length; i++){
+                                    console.log(arg.vector_names[i]);
+                                    vector[arg.vector_names[i]] = arg.vectors[i];
+                                }
+                            }
+                        }
                         // Return a structure suitable for the upsert operation
                         return { id, vector, payload };
                     });
@@ -250,11 +294,20 @@ export async function do_mutation(configuration: Configuration, state: State, mu
                     let args = procedure.arguments.objects as any[];
                     let pointsToInsert = args.map(arg => {
                         let id: number = arg.id;
-                        let vector: number[] = arg.vector || [];
+                        let vector: (number)[] | ({[key: string]: (number)[] | undefined}) = arg.vector || [];
                         const payload: any = {};
                         for (let field of Object.keys(arg)) {
-                            if (field !== "id" && field !== "vector") {
+                            if (field !== "id" && field !== "vector" && field !== "vectors" && field !== "vector_names") {
                                 payload[field] = arg[field];
+                            }
+                        }
+                        if (vector.length === 0){
+                            vector = {};
+                            if (arg.vectors && arg.vector_names){
+                                for (let i = 0; i < arg.vector_names.length; i++){
+                                    console.log(arg.vector_names[i]);
+                                    vector[arg.vector_names[i]] = arg.vectors[i];
+                                }
                             }
                         }
                         return { id, vector, payload };

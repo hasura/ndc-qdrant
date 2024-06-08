@@ -1,49 +1,87 @@
 import { ObjectType, SchemaResponse, CollectionInfo, FunctionInfo, ProcedureInfo, ArgumentInfo, Forbidden } from "@hasura/ndc-sdk-typescript";
 import { SCALAR_TYPES } from "../constants";
 
-export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collectionNames: string[], functions: FunctionInfo[], procedures: ProcedureInfo[]): SchemaResponse {
+export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection_names: string[], functions: FunctionInfo[], procedures: ProcedureInfo[], collection_vectors: {[k: string]: boolean}): SchemaResponse {
     let collectionInfos: CollectionInfo[] = [];
     let functionsInfo: FunctionInfo[] = [];
     let proceduresInfo: ProcedureInfo[] = [];
+    console.log("GETTING SCHEMA");
+    console.log(collection_vectors);
     for (const cn of Object.keys(objectTypes)){
-        if (collectionNames.includes(cn)){
+        if (collection_names.includes(cn)){
             let ID_FIELD_TYPE = "Int";
             if (objectTypes[cn].fields["id"]["type"]["type"] === "named"){
                 ID_FIELD_TYPE = (objectTypes[cn].fields["id"]["type"] as any)["name"];
             } else {
                 throw new Forbidden("Invalid ID type", {});
             }
-            collectionInfos.push({
-                name: `${cn}`,
-                description: null,
-                arguments: {
-                    search: {
-                        type: {
-                            type: "nullable",
-                            underlying_type: {
-                                type: "named",
-                                name: "_search"
+            if (!collection_vectors[cn]){
+                collectionInfos.push({
+                    name: `${cn}`,
+                    description: null,
+                    arguments: {
+                        search: {
+                            type: {
+                                type: "nullable",
+                                underlying_type: {
+                                    type: "named",
+                                    name: "_search"
+                                }
+                            }
+                        },
+                        recommend: {
+                            type: {
+                                type: "nullable",
+                                underlying_type: {
+                                    type: "named",
+                                    name: `_recommend${ID_FIELD_TYPE}`
+                                }
                             }
                         }
                     },
-                    recommend: {
-                        type: {
-                            type: "nullable",
-                            underlying_type: {
-                                type: "named",
-                                name: `_recommend${ID_FIELD_TYPE}`
+                    type: cn,
+                    uniqueness_constraints: {
+                        [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
+                            unique_columns: ["id"]
+                        }
+                    },
+                    foreign_keys: {}
+                });
+            } else {
+                collectionInfos.push({
+                    name: `${cn}`,
+                    description: null,
+                    arguments: {
+                        search: {
+                            type: {
+                                type: "nullable",
+                                underlying_type: {
+                                    type: "named",
+                                    name: "_searchVector"
+                                }
+                            }
+                        },
+                        recommend: {
+                            type: {
+                                type: "nullable",
+                                underlying_type: {
+                                    type: "named",
+                                    name: `_recommend${ID_FIELD_TYPE}Vector`
+                                }
                             }
                         }
-                    }
-                },
-                type: cn,
-                uniqueness_constraints: {
-                    [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
-                        unique_columns: ["id"]
-                    }
-                },
-                foreign_keys: {}
-            });
+                    },
+                    type: cn,
+                    uniqueness_constraints: {
+                        [`${cn.charAt(0).toUpperCase() + cn.slice(1)}ByID`]: {
+                            unique_columns: ["id"]
+                        }
+                    },
+                    foreign_keys: {}
+                });
+            }
+
+
             const proc_insert_one: ProcedureInfo = {
                 name: `insert_${cn}_one`,
                 description: `Insert a single record into the ${cn} collection`,
