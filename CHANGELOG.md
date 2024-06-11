@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.1] - 2024-05-10
+* Updated error handling to throw an error when attempting to paginate across string ID's since offset only works with points with Integer ID's
+
 ## [0.2.0] - 2024-05-6
 * Added support for multi-vector points
 

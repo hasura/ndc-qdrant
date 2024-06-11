@@ -656,17 +656,27 @@ export async function performQueries(
     }[][];
     // Scroll Queries are a list of scroll requests
     // SearchQueries are a list of search requests and can be batched!
+    let hasOffset: boolean = false;
     if (queryPlan.scrollQueries.length > 0) {
         // Run the scrollQueries
         let promises = queryPlan.scrollQueries.map(scrollQuery => {
+            if (scrollQuery.offset){
+                hasOffset = true;
+            }
             return state.client.scroll(queryPlan.collectionName, scrollQuery);
         });
         results = (await Promise.all(promises)).map(r => r.points);
     } else if (queryPlan.searchQueries.length > 0) {
         // Run the searchQueries as a batch!
+        if (queryPlan.searchQueries[0].offset){
+            hasOffset = true;
+        }
         results = await state.client.searchBatch(queryPlan.collectionName, { searches: queryPlan.searchQueries });
     } else if (queryPlan.recommendQueries.length > 0) {
         // Run the reccomendQueries as a batch!
+        if (queryPlan.recommendQueries[0].offset){
+            hasOffset = true;
+        }
         results = await state.client.recommend_batch(queryPlan.collectionName,
             {
                 searches: queryPlan.recommendQueries
@@ -707,6 +717,9 @@ export async function performQueries(
             }
             if (Object.keys(row).length > 0){
                 rows.push(row);
+            }
+            if (typeof p.id === "string" && hasOffset){
+                throw new Forbidden("Offset can only be used with points with Integer ID's", {});
             }
         }
         if (rows.length > 0){

@@ -5,8 +5,6 @@ export function doGetSchema(objectTypes: { [k: string]: ObjectType }, collection
     let collectionInfos: CollectionInfo[] = [];
     let functionsInfo: FunctionInfo[] = [];
     let proceduresInfo: ProcedureInfo[] = [];
-    console.log("GETTING SCHEMA");
-    console.log(collection_vectors);
     for (const cn of Object.keys(objectTypes)){
         if (collection_names.includes(cn)){
             let ID_FIELD_TYPE = "Int";
