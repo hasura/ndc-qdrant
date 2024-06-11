@@ -34,7 +34,7 @@ query Query {
 
 Perform a vector search:
 
-```
+```graphql
 query Query {
   qdrant_boolean(args: {search: {vector: [0.5, 0.5]}}) {
     a
@@ -50,7 +50,7 @@ query Query {
 
 Get reccomendations providing positive and negative examples by ID:
 
-```
+```graphql
 query Query {
   qdrant_boolean(args: {recommend: {positive: [0], negative: [1]}}) {
     a
