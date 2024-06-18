@@ -1,10 +1,10 @@
 # Hasura Qdrant Connector
-<a href="https://hasura.io/"><img src="./docs/logo.svg" align="right" width="200"></a>
+<a href="https://qdrant.tech/"><img src="https://github.com/hasura/ndc-qdrant/blob/main/docs/logo.png" align="right" width="200"></a>
 
 [![Docs](https://img.shields.io/badge/docs-v3.x-brightgreen.svg?style=flat)](https://hasura.io/connectors/qdrant)
 [![ndc-hub](https://img.shields.io/badge/ndc--hub-qdrant-blue.svg?style=flat)](https://hasura.io/connectors/qdrant)
-[![License](https://img.shields.io/badge/license-Apache--2.0-purple.svg?style=flat)](./LICENSE.txt)
-[![Status](https://img.shields.io/badge/status-alpha-yellow.svg?style=flat)](./README.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-purple.svg?style=flat)](https://github.com/hasura/ndc-qdrant/blob/main/LICENSE.txt)
+[![Status](https://img.shields.io/badge/status-alpha-yellow.svg?style=flat)](https://github.com/hasura/ndc-qdrant/blob/main/README.md)
 
 The Hasura Qdrant Connector allows for connecting to a Qdrant database to give you an instant GraphQL API on top of your Qdrant data.
 
@@ -161,11 +161,11 @@ scaffolded out for you 🎉
 
 ## Documentation
 
-View the full documentation for the Qdrant connector [here](./docs/index.md).
+View the full documentation for the Qdrant connector [here](https://github.com/hasura/ndc-qdrant/blob/main/docs/index.md).
 
 ## Contributing
 
-Check out our [contributing guide](./docs/contributing.md) for more details.
+Check out our [contributing guide](https://github.com/hasura/ndc-qdrant/blob/main/docs/contributing.md) for more details.
 
 ## License
 
