@@ -7,7 +7,7 @@
     "generate-config": "ts-node generate-config"
   },
   "dependencies": {
-    "@hasura/ndc-sdk-typescript": "^4.5.0",
+    "@hasura/ndc-sdk-typescript": "^5.2.0",
     "@qdrant/js-client-rest": "^1.5.0"
   },
   "devDependencies": {

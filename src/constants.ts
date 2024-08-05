@@ -6,7 +6,7 @@ import {
 } from "@hasura/ndc-sdk-typescript";
 const ID_FIELD_TYPE: "Int" | "String" = "Int";
 export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
-  version: "^0.1.0",
+  version: "0.1.5",
   capabilities: {
     query: {
       variables: {}

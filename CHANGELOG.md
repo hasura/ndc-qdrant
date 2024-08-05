@@ -1,6 +1,10 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.2] - 2024-08-05
+* Update SDK to 5.2.0
+* Pin version to 0.1.5
+
 ## [0.2.1] - 2024-05-10
 * Updated error handling to throw an error when attempting to paginate across string ID's since offset only works with points with Integer ID's
 
