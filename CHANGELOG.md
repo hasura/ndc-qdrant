@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.3] - 2024-08-06
+* Update workflow to open a PR in ndc-hub
+
 ## [0.2.2] - 2024-08-05
 * Update SDK to 5.2.0
 * Pin version to 0.1.5
