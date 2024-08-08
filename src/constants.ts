@@ -1,13 +1,11 @@
 import {
-  CapabilitiesResponse,
+  Capabilities,
   ScalarType,
   ObjectField,
   ObjectType,
 } from "@hasura/ndc-sdk-typescript";
 const ID_FIELD_TYPE: "Int" | "String" = "Int";
-export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
-  version: "0.1.5",
-  capabilities: {
+export const CAPABILITIES_RESPONSE: Capabilities = {
     query: {
       variables: {}
     },
@@ -18,7 +16,6 @@ export const CAPABILITIES_RESPONSE: CapabilitiesResponse = {
     relationships: {
       order_by_aggregate: {}
     }
-  },
 };
 export const SCALAR_TYPES: { [key: string]: ScalarType } = {
   Int: {

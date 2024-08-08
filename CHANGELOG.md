@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.5] - 2024-08-08
+* Update SDK to v6.0.0
+
 ## [0.2.4] - 2024-08-08
 * Update connector-definition versions
 
