@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.2.4] - 2024-08-08
+* Update connector-definition versions
+
 ## [0.2.3] - 2024-08-06
 * Update workflow to open a PR in ndc-hub
 
