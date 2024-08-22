@@ -1,6 +1,9 @@
 # Qdrant Connector Changelog
 This changelog documents changes between release tags.
 
+## [0.3.0] - 2024-08-22
+* Update Documentation for ndc-hub
+
 ## [0.2.6] - 2024-08-13
 * Fix workflow to publish to NDC-hub
 
